@@ -1,0 +1,172 @@
+\section{Taxonomy of Dynamic Aspects in Robotic World Models}\label{sec:taxonomy_dynamics}
+Before analyzing how factor graphs and scene graphs represent, construct and exploit non-stationary environments, we first set the vocabulary this review adopts to describe \textit{dynamics themselves}. 
+The literature is not consistent here: the same underlying phenomenon, e.g., a chair being moved between visits, is variously described as a \textit{semi-static change} \cite{gomez_object-based_2020}, a \textit{movable} object \cite{brink_using_2016} or a node with a \textit{persistence} attribute\cite{behrens_lost_2025}.
+Establishing a shared characterization upfront allows us to classify representations, pipelines, and applications along consistent axes for the remainder of the review.
+
+We organize dynamics along three axes: 
+\emph{when} a change occurs relative to observation (Temporal Horizon),
+\emph{what} kind of entity undergoes it (Entity Typology),
+and \emph{how} the change manifests in the representation (State Expression).
+A fourth property, the \emph{predictability} of a dynamic entity's behavior, is briefly noted at the end of this section since it is only sparsely addressed by the surveyed literature.
+
+\subsection{Primary Axis: Temporal Horizon}\label{sec:taxonomy_temporal_horizon}
+
+\begin{table}[t]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\caption{Primary temporal-horizon axis used to organize dynamics in graph-based robot world models.}\label{tab:temporal_horizon_taxonomy}
+    \begin{tabularx}{\columnwidth}{@{}p{0.15\columnwidth} p{0.12\columnwidth} X@{}}
+    \toprule
+    \textbf{Tier} & \textbf{Observation-relative criterion } & \textbf{Description} \\
+    \midrule
+    Short-Term Dynamics 
+    &  Evolves during continuous observation 
+    &  Motion must be estimated during observation, such as humans, vehicles, or robots \\ 
+    \midrule
+    Semi-Static Changes 
+    &  Stable within observation, changes between observations/revisits 
+    &  Relocation, appearance/disappearance, or persistent state transitions such as open/closed door \\ 
+    \midrule
+    Long-Term Structural Changes 
+    &  Persistent structural modification across sessions 
+    &  Changes to the built environment itself, such as layout changes, renovations, or seasonal structural variations  \\
+    \bottomrule
+    \end{tabularx}
+\end{table}
+% \begin{table}[t]
+% \centering
+% \caption{Primary temporal-horizon axis used to organize dynamics in graph-based robot world models.}\label{tab:temporal_horizon_taxonomy}
+%     \begin{tabularx}{\columnwidth}{@{}p{0.12\columnwidth} p{0.12\columnwidth} X X@{}}
+%     \toprule
+%     \textbf{Tier} & \textbf{Timescale} & \textbf{Description} & \textbf{Required model mechanism} \\
+%     \midrule
+%     Dynamic Agents 
+%     & Continuous / Now 
+%     & Independently moving entities whose pose changes during observation, such as humans, vehicles, or robots 
+%     & Real-time tracking, motion-aware data association, and often joint SLAMMOT-style estimation \\
+%     \midrule
+%     Semi-Static Changes 
+%     & Minutes--Days 
+%     & Entities that are static during a single observation but may be relocated, added, removed, or change state between observations 
+%     & Persistence reasoning, object permanence, containment relations, and state-update policies \\
+%     \midrule
+%     Long-Term Structural Changes 
+%     & Days--Years 
+%     & Persistent modifications to the built environment itself, such as layout changes, renovations, or seasonal structural variations 
+%     & Multi-session alignment, change detection, map repair, and lifelong graph maintenance \\
+%     \bottomrule
+%     \end{tabularx}
+% \end{table}
+
+The dimension that structures most consistently both individual models and this review is \textit{when} a change occurs relative to the robot's observation stream, since it directly governs the memory allocation, data association strategy, and update frequency a world model must support. 
+We distinguish three tiers:
+
+\begin{itemize}
+    \item \textbf{Short-Term Dynamics} ( within-observation evolution): humans, moving vehicles, and other independently moving entities whose pose changes within the timescale of a single operating session, requiring real-time tracking and motion-aware data association \cite{bescos_dynaslam_2021} \cite{morris_dynosam_2025} \cite{schmid_khronos_2024}.
+    \item \textbf{Semi-Static Changes} ( between-observation state changes): objects that are stationary during any single observation but relocated, added, removed, or state-transitioned between observations, e.g., furniture rearrangement or a door's open/closed state \cite{gomez_object-based_2020} \cite{giberna_dynemo-slam_2025} \cite{schmid_khronos_2024}.
+    \item \textbf{Long-Term Structural Changes} ( persistent cross-session evolution): modifications to the built environment itself, e.g., renovations or seasonal layout shifts, requiring inter-session alignment and lifelong map maintenance \cite{walcott-bryant_dynamic_2012} \cite{kim2022lt}.
+\end{itemize}
+These tiers classify motion and state-change processes, rather than physical entities themselves.
+Temporal Horizon is defined relative to the robot's observation process and world-model update cycle, rather than by a universal elapsed-time threshold.
+A change process is classified as \textbf{short-term} when its state evolves during continuous observation and must therefore be estimated or tracked online; as \textbf{semi-static} when the entity is approximately stationary within an observation but its state differs between observations or revisits; and as \textbf{long-term structural} when the change constitutes a persistent modification of the environment's structural configuration across sessions or deployments. 
+Consequently, different dynamic processes associated with the same physical entity may belong to different tiers, and may coexist within the same world model. 
+For example, the articulated trajectory of a door while it is opening is a short-term dynamic process, the resulting open/closed state retained between observations is a semi-static state change, and installation, removal, or persistent reconfiguration of the door or doorway constitutes long-term structural evolution.
+The taxonomy is therefore operational rather than object-specific. The three regimes imply different representation and maintenance requirements, ranging from continuous motion estimation and tracking, through state persistence and transition reasoning, to multi-session structural change detection and map restructuring.
+
+% \hl{These tiers should be interpreted as operational temporal regimes rather than mutually exclusive classes of physical entities.
+% The classification applies to a particular motion or state-change process relative to the robot's observation horizon and task requirements. Consequently, the boundaries between tiers are intentionally approximate and application-dependent.
+% The same physical entity may therefore participate in multiple temporal regimes. 
+% A door, for instance, can exhibit short-term articulated motion while being opened or closed, retain semi-static open/closed state across observations, and undergo a long-term structural change if the door or doorway is permanently installed, removed, or reconfigured. 
+% Accordingly, a world model may represent different state variables or change process associated with the same entity at different temporal horizons. 
+% }
+
+This tiering is not merely descriptive: it maps directly onto the mechanism a world model must implement, from the tightly-coupled SLAMMOT formulations used for Short-Term Dynamics, through the persistence and containment reasoning used for Semi-Static Changes, to multi-session change detection used for Long-Term Structural Changes. 
+We adopt this three-tier distinction as the primary organizing axis for the remainder of the paper.
+A summary is depicted in Table \ref{tab:temporal_horizon_taxonomy}.
+
+\subsection{Secondary Axes: Entity Typology and State Expression}\label{sec:taxonomy_secondary_axes}
+Within each temporal tier, two further properties are useful for characterizing \textit{what} is changing and \textit{how} that change is expressed in the graph. 
+Table \ref{tab:dynamics_taxonomy} summarizes both.
+
+\textbf{Entity Typology} distinguishes dynamic elements by the structural assumption their motion model requires. 
+\textit{Rigid} entities undergo $SE(3)$ pose change with constant geometry and dominate the surveyed factor-graph formulation \cite{bescos_dynaslam_2021} \cite{qiu2022airdos}.
+\textit{Articulated} entities are constrained by internal kinematic chains, relevant both to manipulable objects such as doors and drawers \cite{zhang_open-vocabulary_2025} and to parametric human body models \cite{henning_bodyslam_2022} \cite{henning_bodyslam_2023}.
+\textit{Deformable} entities, whose shape or topology changes non-rigidly, remain largely outside the scope of the probabilistic graph-based systems surveyed here.
+
+\textbf{State Expression} distinguishes \textit{how} a change manifests once represented. 
+\textit{Geometric-kinematic} changes are variations in position, velocity, or boundary and are the traditional target of factor graph estimation.
+\textit{Semantic-affordance} changes affect an entity's functional or operational state, e.g., a light turning on or off, and are typically encoded as node attributes in 3D scene graphs \cite{catalano_3d_2025} \cite{olivastri_multi-modal_2024}.
+\textit{Topological} changes modify the connectivity of the environment itself, e.g., a closed door removing the traversable edge between two rooms, and are of particular relevance to hierarchical scene graph maintenance \cite{catalano_3d_2025}.
+
+\begin{table}[t]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\caption{Secondary axes used to characterize dynamic entities within each
+temporal tier.}\label{tab:dynamics_taxonomy}
+    \begin{tabularx}{\columnwidth}{@{}l l X@{}}
+    \toprule
+    \textbf{Axis} & \textbf{Category} & \textbf{Description} \\
+    \midrule
+    \multirow{3}{*}{\shortstack[l]{Entity\\Typology}}
+     & Rigid       & $SE(3)$ pose change, constant geometry \\
+     & Articulated & Kinematic chain, constrained internal DoF \\
+     & Deformable  & Non-rigid shape/topology change \\
+    \midrule
+    \multirow{3}{*}{\shortstack[l]{State\\Expression}}
+     & Geometric-Kinematic  & Position, velocity, boundary change \\
+     & Semantic-Affordance  & Functional/operational state change \\
+     & Topological          & Connectivity change in the scene graph \\
+    \midrule
+    \midrule
+    \multirow{3}{*}{\shortstack[l]{Behavioral\\Intent}}
+     & Deterministic  & Motion strictly governed by fixed laws \\
+     & Physics-Based  & Motion governed by physics-based probabilities \\
+     & Goal-Driven    & Motion governed by internal decisions or social compliance \\
+    \bottomrule
+    \end{tabularx}
+\end{table}
+
+\subsection{Adopted Characterization}\label{sec:taxonomy_adopted_characterization}
+We adopt \textbf{Temporal Horizon} as the primary organizing dimension of this review, using the three-tier distinction to structure this paper's analysis.
+The tiers are not mutually exclusive labels for entities or systems. They characterize change processes at different observation horizons, and a single entity or world model may simultaneously instantiate more than one tier.
+Entity Typology and State Expression are used as secondary, descriptive dimensions throughout, applied where relevant to characterize individual systems without constituting an independent organizational axis.
+A fourth property, \textit{Behavioral Intent}, that is the degree to which a dynamic entity's future motion is deterministic, physics-based or goal-driven, is addressed by only a small subset of the reviewed literature \cite{catalano_aion_2025} \cite{gorlo_long-term_2024} and remains largely decoupled from probabilistic world-model construction.
+%We revisit it explicitly as an open direction in Section \ref{sec:open_challenges}
+
+\begin{comment}
+
+When building a general taxonomy for dynamic aspects in robotic world models, the goal is to categorize how a robot perceives, tracks, predicts, and reasons about a world that is not frozen in time. A general taxonomy of dynamic aspects in robotic world models can be structured around four interconnected pillars. This framework defines how a robot perceives, maintains, and projects environmental changes over time:
+\begin{enumerate}
+    \item \textbf{Entity Typology (The "What")} This dimension classifies the structural and material properties of the moving or changing elements, which dictates how they must be mathematically modeled:
+    \begin{itemize}
+        \item Rigid Dynamics: $SE(3)$ pose changes where geometry remains constant (e.g., vehicles, pedestrians).
+        \item Kinematic Chains: Articulated objects with constrained internal degrees of freedom (e.g., opening doors, drawers).
+        \item Deformable Elements: Non-rigid materials that change shape or topology (e.g., cables, cloth, liquids).
+        \item Substance Fields: Continuous environmental phenomena lacking discrete boundaries (e.g., smoke, changing illumination).
+    \end{itemize}
+    \item \textbf{State Expression (The "How")} Dynamism manifests as changes in either the spatial layout or the internal characteristics of the world:
+    \begin{itemize}
+        \item Geometric-Kinematic Dynamics: Trackable variations in position, velocity, and physical boundaries.
+        \item Semantic-Affordance Dynamics: Changes in the operational state or functional availability of an object (e.g., a stove turning "ON", a container becoming "Full").
+        \item Topological Dynamics: Modifications to the connectivity of the environment (e.g., a closed door breaking the traversable edge between a hallway and a room). 
+     \end{itemize}
+    \item \textbf{Temporal Horizons (The "When")}
+    This dimension governs the memory allocation, data association, and updating frequency required by the world model:
+    \begin{itemize}
+     \item Transient (Short-Term): High-frequency, immediate changes (seconds to minutes) requiring real-time tracking and collision avoidance.
+     \item Episodic (Medium-Term/Semi-Static): Intermittent changes occurring between observations (hours to weeks), requiring change detection and graph-mutation (e.g., relocated furniture).
+     \item Structural (Long-Term): Permanent or seasonal changes (months to years) requiring lifelong map maintenance and the discarding of stale environmental anchors.
+    \end{itemize}
+    \item \textbf{Behavioral Intent (The "Why")}
+    This categorizes the predictability of the dynamic element, moving from reactive tracking to proactive anticipation:
+    \begin{itemize}
+    \item Deterministic: Motion strictly governed by fixed laws or periodic schedules (e.g., a conveyor belt).
+    \item Stochastic-Kinematic: Motion governed by physics-based probabilities (e.g., a vehicle maintaining a constant velocity model with noise).
+    \item Intentional/Social: Goal-driven motion governed by internal decisions or social compliance (e.g., a human walking toward a specific tool, obeying traffic rules).
+    \end{itemize}
+\end{enumerate}
+\end{comment}

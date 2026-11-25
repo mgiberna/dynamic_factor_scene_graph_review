@@ -1,0 +1,65 @@
+\section{Applications}\label{sec:applications}
+% Dynamic SLAM: consistent world model under motion/change
+% MOT + interaction understanding: Agents, intentions, trajectories
+% Navigation and Planning: hierarchical routing, traversability graphs, task-level grounding
+% Scene Understanding/Memory: retrivial, localization, long term mapping.
+The dynamic world models presented throughout this paper are not limited in their generation, but their value is realized through the downstream tasks they can enable.
+The shift from static, geometric maps to hybrid probabilistic graph representations that jointly handle geometry, semantics and temporal changes unlocks a richer set of robotic capabilities.
+This section organizes these applications around four themes that progress from self-localization to high-level reasoning: robust SLAM and consistent world modeling under dynamics (Section \ref{sec:applications_slam_dynamics}), multi-object tracking and interaction understanding (Section \ref{sec:applications_mot}), navigation and hierarchical planning (Section \ref{sec:applications_navigation}), scene understanding, memory and long-term retrieval (Section \ref{sec:applications_scene_understanding}).
+These downstream capabilities also inherit errors accumulated during perception, association, and scene-graph construction, following the propagation chain discussed in Section \ref{sec:uncertainty_types}.
+
+\subsection{Robust SLAM and Consistent World Modeling under Dynamics}\label{sec:applications_slam_dynamics}
+The most immediate application of dynamic world models is improving the robustness of self-localization and map building and updating when the environment contains moving or movable entities. 
+In static-world SLAM, dynamic elements degrade trajectory estimation through incorrect data associations and inconsistent landmark observations, leading to the standard approach of outlier rejection but ending up discarding information that a richer model could exploit.
+Tightly-coupled systems such as DynaSLAM II \cite{bescos_dynaslam_2021}, DynoSAM \cite{morris_dynosam_2025}, BodySLAM++\cite{henning_bodyslam_2023} and AirDOS \cite{qiu2022airdos} demonstrate that the joint-optimization formulation introduced in Section \ref{sec:dynamics_representations_agents} improves ego-trajectory accuracy compared to outlier-rejection baselines, since the cross-terms make self-localization and dynamic-entity tracking mutually reinforcing.
+%demonstrate that jointly optimizing camera poses, static landmarks, and dynamic agents trajectories in a unified factor graph back-end improves ego-trajectory accuracy compared to outlier-rejection baselines, because the cross-terms introduced by spatiotemporal reprojection factors make self-localization and dynamic entity estimation mutually reinforcing. 
+DynEMo-SLAM \cite{giberna_dynemo-slam_2025} applies this formulation in practice, allowing the SLAM back-end to benefit from semantic priors on entity motion while producing a richer joint world model.
+%extends this to a hybrid factor-scene graph formulation including occasionally displaced objects, where dynamic entities are incorporated both as factor graph variables constrained by semantic motion models priors and as nodes in the scene graph, enabling the SLAM back-end to benefit from semantic priors on entity motion while simultaneously producing a richer world model.
+
+The world model also needs to remain consistent across sessions and under long-term changes. 
+% Khronos \cite{schmid_khronos_2024} addresses the spatio-temporal consistency problem by factorizing it into a fast active window for short-term agent dynamics and an asynchronous global process for long-term change detection, using ray-tracing evidence to distinguish between object removal and transient occlusion.
+Khronos \cite{schmid_khronos_2024} applies the spatio-temporal mechanisms described in Section \ref{sec:dyn_world_model_representations_scene_graphs} and \ref{sec:construction_pipeline_graph_maintenance} at system scale, demonstrating that the same active-window/global-process split supports lifelong operation across extended deployments.
+Systems like DPG-SLAM \cite{walcott-bryant_dynamic_2012} implement explicit forgetting policies, pruning nodes only when they no longer contribute topological information, thereby managing graph complexity without losing historical data.
+These mechanisms are essential for robots operating across extended deployment horizons, such as warehouses, offices, and hospitals, where the entity population changes between sessions, and represent a direct application of the probabilistic birth-death modeling discussed in Section ~\ref{sec:construction_pipeline_graph_maintenance}.
+
+\subsection{Multi-Object Tracking and Interaction Understanding}\label{sec:applications_mot}
+Beyond robust self-localization, dynamic world models serve as the substrate for understanding the agents and objects that populate the environment. 
+In tightly coupled SLAMMOT paradigm, the factor graph back-end estimates object trajectories jointly with the robot pose, providing smoothed, geometrically consistent tracks that  can exploit joint constraints between ego-motion and dynamic-entity motion, unlike standalone MOT formulations that estimate object tracks independently of the SLAM state. 
+DynoSAM \cite{morris_dynosam_2025}, BodySLAM \cite{henning_bodyslam_2022} and AirDOS \cite{qiu2022airdos} generate 4D spatio-temporal maps of dynamic objects and agents as an output of their unified optimization, enabling downstream tasks such as trajectory prediction and collision forecasting.
+
+For human agents specifically, BodySLAM \cite{henning_bodyslam_2022} and BodySLAM++ \cite{henning_bodyslam_2023} recover full SMPL body shape and pose jointly with camera trajectory (Section \ref{sec:dynamics_representations_agents}), producing a world model that captures postural state directly relevant to human-robot interaction and intention prediction. %go further by recovering full SMPL body shape and pose jointly with camera trajectory, producing world model that captures not only where a person is but also their postural state, information directly relevant to human-robot interaction and intention prediction.
+The structured prior provided by the parametric body model acts as a strong regularizer that improves both the human pose estimate and the camera trajectory, particularly in scenes where humans occlude most of the field of view and purely geometric feature tracking fails. 
+At the level of intentions and trajectories, Gorlo et al. \cite{gorlo_long-term_2024} use the temporal structure of a 3D dynamic scene graph, e.g. recognizing that a person moving toward a doorway is likely to exit, rather than relying solely on kinematic history.
+Aion \cite{catalano_aion_2025} extends this predictive capability to activity forecasting, building a model of human rhythms that lets the robot anticipate congestion before it occurs. %further by learning directional flow statistics over navigational nodes, building a predictive model for human activity rhythms that enables the robot to anticipate congestion before it occurs. 
+
+Scene graphs enrich this tracking with semantic understanding of interactions, like Lost \& Found \cite{behrens_lost_2025} and its human-object interactions triggering updates at graph edge level, effectively building a running causal system for tracking how the scene has changed due to human activity without requiring a full scene reconstruction after each interaction.
+
+\subsection{Navigation and Hierarchical Planning}\label{sec:applications_navigation}
+Dynamic world models directly inform navigation and planning by providing structured, multi-resolution representations that support both metric path execution and high-level task decomposition.
+The hierarchical layers of 3D scene graphs allow planners to operate at an appropriate level of abstraction for the current task, consistently reducing computation compared to planning over dense volumetric maps \cite{ray2024taskmotionplanninghierarchical} \cite{viswanathan2025spadescalablepathplanning}. Ejaz et al. \cite{ejaz2025situationallyawarepathplanningexploiting} demonstrate this computation efficiency through situationally-aware path planning over 3D scene graphs, using the relational structure of the graph to select traversal sequences that account for both metric cost and semantic context. 
+
+ In factor-graph-backed scene graphs, metric node positions can inherit the global consistency of the underlying geometric optimization, providing a geometrically grounded representation for downstream planning.  
+SayPlan \cite{rana2023sayplangroundinglargelanguage} and Clio \cite{maggio_clio_2024} apply the task-driven pruning described in Section \ref{sec:querying_reasoning_action_action} to reduce planning complexity by orders of magnitude in large environments. %address scalability by using task-driven abstraction to prune the scene to a minimal actionable subgraph relevant to the current natural language mission, reducing planning complexity by orders of magnitude in large environments.
+
+In dynamic environments, however, static planning assumptions break down: a path computed over the current scene graph may become infeasible as agents move, objects are displaced, or passageways are shut. 
+The connection between the factor graph dynamics layer and the planning layer remains largely open. 
+Current systems either replan from scratch on graph updates or maintain pre-computed paths that are invalidated when dynamic nodes change \cite{ejaz2025situationallyawarepathplanningexploiting}, a limitation that Aion's predictive flow statistics (Section \ref{sec:dyn_world_model_representations_scene_graphs}) begin to address by routing around congestion proactively\cite{catalano_aion_2025}.
+The quality of the planning representation is therefore directly conditioned on the upstream estimation pipeline.
+A localization or object-pose error primarily perturbs metric costs and collision geometry, whereas an incorrect association or relation can alter the topology presented to the planner, for example by assigning an obstacle to the wrong location or incorrectly representing a passageway as traversable.
+These errors can consequently have different effects on navigation even when their representation-level accuracy metrics are similar.
+
+\subsection{Scene Understanding, Memory, and Long-Term Retrieval}\label{sec:applications_scene_understanding}
+The fourth identified application area treats the dynamic world model as a persistent, queryable memory that supports object retrieval, semantic localization and long-term scene understanding.
+DovSG \cite{yan_dynamic_2025} demonstrates this for mobile manipulation, where the open-vocabulary 3D scene graph serves as the robot's persistent object memory, supporting natural language queries for object retrieval even after objects have been displaced by human interaction. % human interactions have displaced objects from their original locations, with local graph updates keeping the memory consistent without requiring full rescanning. 
+
+% Belief Scene Graphs \cite{saucedo_estimating_2025} extend this memory to unobserved regions, using learned co-occurrence patterns to populate the scene graph with probabilistic blind nodes representing objects expected to exist based on commonsense spatial knowledge, e.g. a stove in a kitchen or a desk in a classroom. 
+% This transforms the world model from a reactive record of observations into a predictive spatial memory that can guide active exploration and object search under partial observability.
+Belief Scene Graphs \cite{saucedo_estimating_2025} extend this memory to unobserved regions, transforming the world model from reactive record into a predictive spatial memory that can guide active exploration under partial observability.
+For manipulation, semantic and relational errors can be more consequential than small metric errors: a well-localized object with an incorrect class, state, relation may lead the robot to select the wrong target or execute an invalid interaction, whereas moderate pose error may still be corrected through local re-perception before execution.
+
+\bigskip
+
+Across all four application areas,  the surveyed systems illustrate how probabilistic geometric estimation and semantic-relational abstraction can provide complementary capabilities for estimation, prediction, planning and interaction. 
+This architectural complementarity suggests that hybrid factor graph-scene graph representations are a promising design direction for applications requiring both geometric consistency and semantic reasoning, although the surveyed evidence does not establish their general superiority over alternative representations.
+
+%and that the downstream applications they enable are qualitatively beyond what either paradigm alone can support in dynamic environments.

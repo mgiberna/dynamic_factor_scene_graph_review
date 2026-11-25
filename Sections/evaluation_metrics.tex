@@ -1,0 +1,282 @@
+\section{Evaluation Protocols, Datasets and Metrics}\label{sec:evaluation_metrics}
+Evaluation can be considered at two complementary levels. 
+Representation-level metrics assess the accuracy, consistency and efficiency of the world model itself, whereas task-level metrics assess whether that representation improves downstream robot behavior.
+The former are necessary diagnostics, but lower trajectory error or higher scene-graph accuracy does not necessarily imply improved navigation or manipulation performance.
+We therefore use task-level metrics specifically for evaluations in which the constructed world model is consumed by a downstream robotic or reasoning task and performance is measured at the level of that task, rather than inferred from representation accuracy alone.
+
+\begin{table*}[!htbp]
+  \caption{Public Datasets and Benchmarks for Dynamic SLAM and Object Tracking}
+  \label{tab:datasets_benchmarks}
+  \centering
+  \scriptsize
+  \adjustbox{max width=\textwidth, max totalheight=0.98\textheight}{%
+  \setlength{\tabcolsep}{3pt}
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabularx}{\textwidth}{@{}X X X X X X X@{}}
+    \toprule
+    \textbf{Dataset} & \textbf{Key Features} & \textbf{Environment} & \textbf{Dynamics} & \textbf{Use Case} & \textbf{Sensors} & \textbf{Used In} \\
+    \midrule
+    \midrule
+    \multicolumn{7}{@{}c}{\textbf{I. Public Outdoor and Urban Driving Benchmarks}} \\
+    \midrule
+    KITTI Tracking/Odometry \cite{gaidon2016virtual} & Grayscale and RGB stereo, GPS, IMU, 3D LiDAR & Urban/Highway & Vehicles, pedestrians & High-speed dynamics, ego-motion ambiguity & GPS, IMU, 3D LiDAR,  RGB & \cite{bescos_dynaslam_2021}, \cite{brink_using_2016}, \cite{morris_importance_2024}, \cite{tian_dl-slot_2024}, \cite{tian_dynaquadric_2024} \\
+    nuScenes \cite{caesar_nuscenes_2019} & 3D MOT (AMOTA), urban LiDAR detections & Urban & High traffic density & Multi-object tracking, accuracy evaluation & LiDAR,  RGB & \cite{zaech_learnable_2022} \\
+    Virtual KITTI \cite{geiger_vision_2013} & Synthetic, photo-realistic, ground truth camera/object poses & Urban/Highway & Vehicles, pedestrians & Depth error isolation, object segmentation &  RGB,  & \cite{henein_dynamic_2020} \\
+    Victoria Park \cite{guivant_simultaneous_2002} & 2D odometry, landmark observations (trees), simulated northward movement & Urban & Corrupted landmarks & Solver divergence, robustness testing & Laser scan, GPS & \cite{lingzhu_xiang_robust_2015} \\
+    Alcazar of Seville \cite{iros14-frog} & Visual-stereo, dynamic pedestrians & Indoor/Outdoor & Pedestrian dynamics & Re-localization, landmark stability & Stereo RGB, Laser scanners & \cite{lingzhu_xiang_robust_2015} \\
+    \midrule
+    \midrule
+    \multicolumn{7}{@{}c}{\textbf{II. Public Indoor and Semantic Mapping Datasets}} \\
+    \midrule
+    OpenLORIS-Scene \cite{shi_are_2019} & Office and supermarket environments, lifelong SLAM & Indoor & Pedestrian occlusion, scene changes & Long-term SLAM, furniture relocation & RGB-D, Semantic Labels & \cite{wang_semantic_2023}, \cite{ding_dynamic_2025} \\
+    ScanNet \cite{dai_scannet_2017} & 1500+ RGB-D sequences, indoor spaces & Indoor & Static and dynamic objects & 3D scene graph construction, object relationships \& reconstruction & RGB-D, Semantic Labels & \cite{kim_3-d_2020} \\
+    Matterport3D \cite{chang_matterport3d_2017} & 35 semantic classes, residential/commercial spaces & Indoor & Room layouts, objects & Learning co-occurrence, spatial distribution & RGB-D, 3D Models & \cite{saucedo_estimating_2025} \\
+    TUM RGB-D \cite{sturm_benchmark_2012} & Office sequences, Kinect sensors, Vicon motion capture & Indoor & Walking, desk movements & High/Low dynamics, object tracking & RGB-D, Motion Capture & \cite{wang_semantic_2023} \\
+    Bonn RGB-D Dynamic\cite{palazzolo2019iros} & Moving people interacting with moving objects & Indoor & Humans, Objects & Multi-object tracking Scene reconstruction & RGB-D  & \cite{cheng2022sg}\\
+    Oxford Multimotion Dataset (OMD) \cite{judd_oxford_2019} & Swinging cubes, unconstrained motion & Indoor & Non-planar, fast-moving objects & Challenging dynamic tracking & Stereo, RGB-D, IMU, Vicon motion capture & \cite{gou_visual_2024}, \cite{morris_importance_2024}, \cite{morris_dynosam_2025} \\
+    InCrowd-VI \cite{bamdad2024incrowd} & Indoor crowded environments & Indoor & Walking, crowded scenes & Indoor pedestrian-rich human navigation & RGB, IMU & \cite{bamdad2024incrowd} \\
+    \midrule
+    \midrule
+    \multicolumn{7}{@{}c}{\textbf{III. Synthetic and Semi-Synthetic Environment Simulators}} \\
+    \midrule
+    TESSE Simulator \cite{ravichandran_bridging_2020} & Short-term dynamics, long-term changes, precise ground truth & Indoor & Walking, bouncing balls, furniture changes & Controlled ablation studies & RGB, Depth & \cite{schmid_khronos_2024} \\
+    VirtualHome \cite{puig_virtualhome_2018} & Object movements in household routines, 50+ days & Indoor & Object movement in routine activities & Object tracking, daily activities & RGB & \cite{patel_proactive_2022} \\
+    CARLA Simulator \cite{dosovitskiy_carla_2017} & Urban scene graph partitioning, weather dynamics & Urban & Traffic, pedestrian dynamics & Scene graph partitioning, dynamic environments &  RGB, LiDAR & \cite{greve_collaborative_2024} \\
+    Dynamic House Simulator  \cite{kurenkov_modeling_2023} & Household dynamic objects, movement between furniture & Indoor & Object movement, probabilistic dynamics & Link prediction, dynamic environments & RGB & \cite{kurenkov_modeling_2023} \\
+    \midrule
+    \midrule
+    \multicolumn{7}{@{}c}{\textbf{IV. Specialized Benchmarks and Self-Collected Data}} \\
+    \midrule
+    VIODE \cite{minodaRAL2021} & UAV-based visual-inertial odometry, extreme motions, occlusion, Ground truth poses & Outdoor & UAV in parking lot, dynamic agents & Real-time update, occlusion handling & Stereo RGB, IMU  & \cite{morris_dynosam_2025} \\
+    TartanAir Shibuya \cite{tartanair2020iros}  & 30+ humans, dense urban crossing & Urban & Non-rigid, crowded scenes, Ground truth poses & Robustness in crowded environments & Stereo RGB, Depth  & \cite{morris_dynosam_2025} \cite{qiu2022airdos} \\
+    uHumans/uHumans2 \cite{rosinol_kimera_2021} & Unity-based simulator, 12-60 human agents, SMPL meshes, Ground truth poses & Indoor/Outdoor & Dense human tracking & Human interaction, dynamic tracking & Stereo RGB, Depth, IMU  & \cite{rosinol_kimera_2021} \\
+    FunGraph3D \cite{zhang_open-vocabulary_2025} & iPad Pro video, high-fidelity laser scans, Apple Vision Pro, Functional annotations & Indoor/Outdoor & Functional relationships (e.g., switches) & Functional annotation, relationship tracking & RGB-D/LiDAR, Laser Scan, egocentric video & \cite{zhang_open-vocabulary_2025} \\
+    OC-NaVQA \cite{gorlo_describe_2025} & Object-centric NaVQA, spatio-temporal Q\&A, Ground truth Q\&A labels & Indoor/Outdoor & Static and dynamic environments & Question answering, memory sequences & Stereo RGB, RGB-D, LiDAR, IMU & \cite{gorlo_describe_2025} \\
+    Husky/Spot Field Tests & Real university halls/offices, LiDAR and RGB-D sensors & Indoor & Dynamic agents (robots, pedestrians), dynamic objects & Real-time performance validation & LiDAR, RGB-D & \cite{schmid_khronos_2024}, \cite{giberna_dynemo-slam_2025} \\
+    \bottomrule
+  \end{tabularx}
+  }
+\end{table*}
+
+\begin{table*}[!htbp]
+\caption{Metric catalog for representation-level and task-level evaluation of dynamic SLAM (FG) and scene graph (SG) systems .}
+\label{tab:metrics_table}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{@{}X l X@{} r}
+\toprule
+
+\textbf{Metric} & \textbf{Type} & \textbf{What it measures / notes} & \textbf{Used in} \\
+
+\midrule
+
+\textbf{ATE (RMSE/median)} & Trajectory & 
+Absolute trajectory error vs ground truth; report RMSE + median, and whether aligned (SE(3)/Sim(3)). 
+& \cite{bescos_dynaslam_2021} \cite{morris_dynosam_2025} \cite{giberna_dynemo-slam_2025}\\
+\textbf{RPE ($\Delta t$ / $\Delta s$)} & Trajectory & Relative pose error; clarifies short-term drift; specify interval. 
+& \cite{bescos_dynaslam_2021} \cite{morris_dynosam_2025} \cite{morris_importance_2024}\\
+\textbf{Drift (m/100m, deg/100m)} & Trajectory & 
+Aggregate drift over distance; common in automotive datasets. 
+& \cite{rosinol_kimera_2021}\\
+\textbf{Relocalization success rate} & Trajectory & 
+Fraction of trials where tracking is recovered after dropout/occlusion. 
+& \cite{vega_torres_bim-slam_2023} \cite{wang_semantic_2023}\\
+\textbf{CS-R (Correctness Score of Re-Localization)} & Trajectory &
+Reliability of re-localization events in dynamic scenes; typically validates that a declared relocalization is correct (not a false positive). 
+& \cite{wang_semantic_2023}\\
+\textbf{Failure rate / time-to-failure} & System & 
+Robustness under dynamics; define failure criterion (e.g. lost tracking $>$ N frames). 
+& \cite{scherer_ogm2pgbm_2023}\\
+
+\midrule
+
+\textbf{Runtime (Hz/FPS), latency (ms)} & System & 
+Throughput and per-module latency; note hardware and whether real-time. 
+& \cite{behrens_lost_2025} \cite{bescos_dynaslam_2021} \cite{schmid_khronos_2024}\\
+\textbf{CPU/GPU, memory footprint} & System & 
+Resource profile for deployability comparisons. 
+& \cite{ferraina_lost-3dsg_2026}\\
+
+\midrule
+
+Geometric RMSE / surface distance & Map & 
+Geometric discrepancy between reconstructed surface/point cloud and a reference model, specifying registration procedure. . 
+& \cite{rosinol_kimera_2021} \cite{yan_dynamic_2025}\\
+\textbf{Map IoU} & Map & Overlap between predicted and GT occupancy grids; specify resolution and thresholding. 
+& \cite{rosinol_kimera_2021}\\
+\textbf{TP rate (2D / BEV / 3D)} & Map &
+True positive rate for occupancy estimation across viewpoints/representations; report the corresponding FP/FN definitions. 
+& \cite{zhang_semantic-integrated_2026} \cite{bescos_dynaslam_2021}\\
+\textbf{SCDA (Scene Change Detection Accuracy)} & Change &
+Accuracy of detecting voxel-level or object-level changes over time; clarify temporal window and whether class-conditioned. 
+& \cite{yan_dynamic_2025}\\
+
+\midrule
+
+\textbf{Mask IoU / mIoU} & Semantics & 
+Segmentation quality for dynamic masking or semantic labels. 
+& \cite{rosinol_kimera_2021}\\
+\textbf{Precision/Recall/F1 (objects)} & Semantics & 
+Detection/instance metrics; specify IoU threshold (e.g. 0.5). 
+& \cite{schmid_khronos_2024}\\
+\textbf{Motion Error (ME)} & Motion &
+Frame-agnostic object motion error evaluated in the ground-truth object frame; helps compare methods using different reference frame conventions. 
+& \cite{morris_dynosam_2025} \cite{morris_online_2025}\\
+
+\midrule
+
+\textbf{MOTA / AMOTA / MOTP} & Tracking &
+Classic multi-object tracking metrics (association + localization); sensitive to thresholds and missed detections. 
+& \makecell{\cite{gou_visual_2024} \cite{tian_dl-slot_2024} \cite{zaech_learnable_2022} \\ \cite{zhang_semantic-integrated_2026} \cite{gou_visual_2024} \cite{bescos_dynaslam_2021}} \\
+\textbf{ID Switches} & Tracking &
+Counts identity swaps in tracking; lower is better. 
+& \cite{zhang_semantic-integrated_2026} \cite{zaech_learnable_2022}\\
+\textbf{Fragments (track fragmentation)} & Tracking &
+Counts interruptions/splits in a trajectory; measures continuity of tracks. 
+& \cite{zhang_semantic-integrated_2026}\\
+\textbf{IDF1} & Tracking &
+Identity-based F1; balances correct associations over time. 
+& \cite{zhang_semantic-integrated_2026}\\
+% \textbf{HOTA} & Tracking &
+% Higher-order tracking accuracy (joint detection + association quality). 
+% & \\
+
+\midrule
+
+\textbf{Node Precision/Recall/F1} & Graph &
+Correctness of entity discovery (rooms/walls/objects) in scene graphs; depends on matching policy between predicted and GT nodes. 
+& \cite{zhang_open-vocabulary_2025} \cite{ferraina_lost-3dsg_2026}\\
+\textbf{Edge Precision/Recall/F1 / edge prediction/accuracy} & Graph &
+Correctness of predicted relations (adjacent-to, in-room, supports, etc.); report relation set and matching rules. 
+& \cite{zhang_open-vocabulary_2025}\\
+\textbf{Spurious \& Missing Entities} & Graph &
+Human-judgment metric counting incorrect (spurious) or omitted (missing) nodes/edges in constructed SGs. 
+& \cite{kim_3-d_2020}\\
+\textbf{Precision/Recall of scene parsing} & Parsing &
+Accuracy of partitioning places into rooms or higher-level structures (often computed from segmentation or region adjacency). 
+& \cite{rosinol_3d_2020}\cite{rosinol_kimera_2020}\\
+\textbf{Graph Edit Distance (GED)} & Graph &
+Structural similarity to GT graph; sensitive to node/edge labels,  matching and edit-cost definition. 
+& \textcolor{yellow}{\cite{milewski2026human}}\\
+\textbf{Temporal  graph change} & Graph-time &
+ Change in graph structure over time (e.g., additions/deletions per minute, or lifetime distributions); normalization is required when graph size differs. 
+& \cite{guo2026ssprcd} \\
+
+\midrule
+
+\textbf{NDCG (Normalized Discounted Cumulative Gain)} & Ranking &
+Quality of predicted rankings (e.g., likelihood-ranked object locations); requires relevance labels and a cutoff $K$. 
+& \cite{kurenkov_modeling_2023}\\
+
+\midrule
+
+\textbf{NEES / $\chi^2$ consistency} & Prob. (FG) &
+Consistency of estimated state uncertainty against ground-truth error; important when works claim probabilistic reliability.
+&\cite{ila2009information}\\
+
+\midrule
+%\multicolumn{3}{@{}l}{\textbf{Semantic reasoning and downstream task metrics}}\\
+\midrule
+
+\textbf{Descriptive question accuracy (SQA)} & Reasoning &
+Accuracy on spatio-temporal question answering using 4D/temporal scene graphs. 
+& \cite{gorlo_describe_2025}\\
+\textbf{ADE (Avg. Displacement Error)} & Prediction &
+Average distance between predicted and GT trajectories (e.g., human motion). 
+& \cite{gorlo_long-term_2024}\\
+\textbf{BoN ADE (Best-of-N ADE)} & Prediction &
+Minimum ADE over $N$ sampled predictions; measures multi-modal forecasting quality. 
+& \cite{gorlo_long-term_2024}\\
+\textbf{Task success rate} & Task &
+Completion rate of robot tasks informed by the world model (e.g., pick-and-place); specify task definition and failure modes. 
+& \cite{yan_dynamic_2025}\\
+\textbf{BLEU / METEOR / BERTScore} & Language &
+Similarity of generated textual SG annotations to references; report whether multiple references are used and tokenization details. 
+& \cite{linok_dygenc_2025}\\
+
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+
+\subsection{Protocols}\label{sec:evaluation_metrics_protocols}
+%Protocols: per-sequence evaluation; multi-run statistics; dynamic severity sweeps; relocalization dropouts; multi-session/long-term changes; ablations (robust loss, dynamic filtering, SG update policy).
+A thorough analysis of the evaluation protocols reveals a rigorous methodological framework designed to validate the robustness of world models against non-stationary environments.
+These protocols go beyond traditional SLAM metrics, including stochastic analysis, longitudinal studies and modular ablations to isolate the effect of various architectural components. 
+Moreover, research in dynamic SLAM has shifted towards validating the efficacy of the system in and for specific use cases.
+Across the surveyed literature, evaluation protocols combine conventional SLAM metrics with robustness tests, longitudinal evaluation, and targeted ablations, although the exact protocol varies considerably across systems and applications. Application-specific evaluations are also increasingly used to assess the benefits of dynamic world models for particular downstream tasks.
+
+
+\subsubsection{Per-Sequence and Multi-Run Evaluation}
+Evaluation is commonly reported per sequence, while several surveyed works additionally repeat runs to quantify stochastic or implementation-dependent variability :
+
+\begin{itemize}
+    \item \textbf{Per-Sequence Analysis}:  Many surveyed works report results separately for each sequence to expose variations in environmental conditions, dynamic density and feature availability \cite{tian_dl-slot_2024} \cite{giberna_dynemo-slam_2025} \cite{zhang_semantic-integrated_2026}.
+    \item \textbf{Stochasticity Management}: To mitigate the impact of random initialization in particle filters or the non-deterministic nature of multi-threaded optimization, experiments are executed multiple times.
+     Reported practices include running each sequence multiple times and reporting the median value \cite{zhang_semantic-integrated_2026} or average \cite{scherer_ogm2pgbm_2023}.
+    Other collaborative frameworks report mean and standard deviation over several randomly initialized runs to quantify stability \cite{greve_collaborative_2024}.
+\end{itemize}
+
+\subsubsection{Dynamic Severity Sweeps}
+Evaluation protocols frequently involve sweeping through levels of environmental complexity to test the limits of dynamic robustness.
+
+\begin{itemize}
+    \item \textbf{Entity Density Scalability}: The uHumans and uHumans2 datasets are used to evaluate how spatial perception engines handle environments with increasing numbers of dynamic entities, ranging from 12 to 60 human agents \cite{rosinol_3d_2020}. Similar approaches are partaken when the dynamics in the scene are displaced objects rather than continuously moving humans \cite{ferraina_lost-3dsg_2026}. Also self-collected datasets are generated accounting for different progressive levels, densities and complexities of dynamic entities populating the scene \cite{giberna_dynemo-slam_2025}.
+    \item \textbf{Dynamic Entity Types}: Taking into account that different kinds of dynamics can occur in the scene, e.g. persistently moving agents and occasionally displaced objects, the systems' generalization capabilities are often evaluated by testing  subsets or different configurations of possible dynamics occurring in the scene \cite{giberna_dynemo-slam_2025}.
+    \item \textbf{Clutter and Deviation Levels}: In BIM-based localization, scenarios are designed to progressively increase the level of clutter, thereby decreasing the overlap with permanent building objects \cite{vega_torres_bim-slam_2023} \cite{shaheer_tightly_2025}.
+    \item \textbf{Controlled Configuration Sweeps}: Navigation models are tested against varying obstacle configurations to ensure that learned policies generalize across different collision trajectories \cite{maguire_lidar-only_2025}. 
+\end{itemize}
+
+\subsubsection{Relocalization Dropouts and Success Rate}
+The robustness of the world model is tested through its ability to recover from tracking loss, particularly when dynamic occlusion causes feature dropouts. 
+
+\begin{itemize}
+    \item \textbf{Sequential Retrieval Tests}: Systems are evaluated by sequentially feeding data from different sessions and counting the number of successful against unsuccessful relocalization events \cite{wang_semantic_2023}.
+    \item \textbf{Convergence Metrics}: Success is often defined by a threshold-based protocol, where a method is deemed to have converged if the pose estimate, either of the exploring robot's trajectories or detected entities, stabilizes within a specific distance of the ground truth within a set percentage of the sequence length\cite{vega_torres_bim-slam_2023} \cite{morris_importance_2024}.
+    \item \textbf{Initialization and Hand-off}: Some protocols evaluate the efficiency of switching from a stochastic global localizer to a precise graph-based localization algorithm once a covariance threshold is met \cite{scherer_ogm2pgbm_2023}.
+\end{itemize}
+
+\subsubsection{Multi-Session and Long-Term Change Protocols}
+Lifelong autonomy is validated through longitudinal data collection and multi-pass traversal.
+
+\begin{itemize}
+    \item \textbf{Long-Term Monitoring}: Systems are evaluated on their ability to update object probabilities across extensive periods \cite{gomez_object-based_2020} \cite{patel_proactive_2022}.
+    \item \textbf{Incremental Pass Validation}: Protocols include repeated traversals of the same environment to determine if the model can successfully ``forget'' ephemeral data and identify static  structural components \cite{walcott-bryant_dynamic_2012}.
+    \item \textbf{Consecutive Task Execution}: Robots are tested on their ability to complete consecutive manipulation tasks without manual resets, ensuring the updated 3D scene graph remains actionable after manual modification of the environment \cite{yan_dynamic_2025}.
+\end{itemize}
+
+\subsubsection{Systematic Ablation Studies}
+Ablation protocols are essential for isolating the contribution of proposed factors, modules and policies.
+
+\begin{itemize}
+    \item \textbf{Dynamic Filtering Modules}: Protocols isolate the dynamic entities or features removal module to identify the best trade-off for loop closure quality \cite{giberna_dynemo-slam_2025}.
+    \item \textbf{Scene Graph Update Policies}: Researchers ablate the logic used for graph maintenance, such as the effectiveness of \textit{sequential reasoning} in functional graphs \cite{zhang_open-vocabulary_2025} or the utility of \textit{region clustering} and \textit{frame selection heuristics} \cite{gorlo_describe_2025} or \textit{keyframe selection policies} \cite{giberna_dynemo-slam_2025} in 4D scene graph generation.
+    \item \textbf{Factor-Level Ablations}: In tightly-coupled systems, models are evaluated with and without specific constraints, such as \textit{non-rigid factors} for humans or \textit{rigid factors} for objects, to verify their individual contributions to trajectory accuracy and world model generation \cite{giberna_dynemo-slam_2025} \cite{ding_dynamic_2025}.
+\end{itemize}
+
+
+Viewed through the representation-versus-utility distinction introduced above, most surveyed protocols primarily evaluate representation-level robustness: they perturb dynamic density, tracking conditions, map structure, or individual system components and measure the resulting estimation or reconstruction quality.
+Task-level evaluation is less common.
+For example, consecutive task-execution protocols directly test whether an updated scene graph remains useful for manipulation \cite{yan_dynamic_2025}, whereas many dynamic SLAM evaluations terminate at trajectory, tracking or map-quality metrics.
+Consequently, the literature provides more evidence about whether a world model is geometrically or structurally accurate than about how much that accuracy improves downstream robotic behavior. 
+
+
+\subsection{Datasets}\label{sec:evaluation_metrics_datasets}
+%Datasets: split by sensing (RGB-D / stereo / LiDAR / multi-modal), and by dynamics type (moving objects, crowds, structural changes, illumination/weather changes, multi-session).
+The evaluation of hybrid world models, integrating scene graphs and/or factor graphs, and spatio-temporal dynamics, relies on a hierarchical selection of commonly employed datasets ranging from established autonomous driving benchmarks to specialized indoor semantic simulators.
+Additionally, to assess the system behavior on specific situations, self-collected datasets presenting peculiar kinds of environments and dynamics are created, either in real world or simulation. 
+These datasets can be categorized by their environmental focus, sensor suites, and the specific nature of the dynamics they encapsulate. 
+Table \ref{tab:datasets_benchmarks} reports the most commonly used publicly available datasets, benchmarks and simulators. 
+
+\subsection{Metrics}\label{sec:evaluation_metrics_metrics}
+%Metrics: group into trajectory, map geometry, semantics/tracking, graph structure, system/runtime, and probabilistic consistency.
+The metrics in Table \ref{tab:metrics_table} fall into two broad classes.
+Representation-level metrics evaluate trajectory estimation, map geometry, perception and tracking, graph structure, computational performance, and probabilistic consistency.
+Task-level metrics instead evaluate the utility of the resulting world model for reasoning and action, such as question answering or task success.
+Improvements in representation-level metrics do not necessarily translate into higher task-level utility, motivating the evaluation gap discussed in Section \hyperref[sec:open_challenges_metrics_gap]{X-C(d)}.
+The distribution of metrics in Table \ref{tab:metrics_table} also reveals an evaluation imbalance in the current literature.
+Trajectory, mapping, tracking and graph-structure accuracy have well-established quantitative measures, whereas end-to-end task utility is evaluated less systematically and with application-specific criteria.
+Moreover, the surveyed works rarely measure both levels under the same controlled perturbation, so the relationship between an improvement in representation quality and the corresponding improvement in task performance is generally unknown. 
+This prevents, for example, determining how a reduction in object-pose or an improvement in relation accuracy translates into navigation or manipulation success.

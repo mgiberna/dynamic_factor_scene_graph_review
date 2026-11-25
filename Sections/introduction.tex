@@ -1,0 +1,47 @@
+\section{Introduction}\label{sec:introduction}
+\PARstart{R}{obotic} autonomy relies on the ability to construct, maintain and exploit internal representations of the world.
+These representations serve as a robot's mental map, enabling the grounding of perception into action and supporting decision-making and action generation to achieve desired tasks. %across a wide range of tasks.
+World representations are necessary for mobile robots, even if they only come in a simple static form. Geometric maps such as point clouds, occupancy grids, or meshes provide the spatial substrate required for localization, navigation, and collision-free motion planning \cite{luca_carlone_slam_2025}.
+Without such representations, even basic tasks like obstacle avoidance and exploration in any environment would be infeasible.
+
+Beyond low-level geometry, many robotic applications require richer and more structured representations. 
+Mobile manipulation and object retrieval, for instance, require identifying not only where the robot is, but also \textit{what} objects exist, \textit{where} they are located, and \textit{how} they relate to one another (e.g. a human \textit{sitting on} the chair \textit{next to} the table \textit{in} the kitchen) \cite{bavle_slam_2023}.
+Similarly, long-horizon task planning and human-robot interaction depend on representations that support abstraction and reasoning, aligning the robot and human's understanding of the environment. 
+Commands expressed in natural language cannot be grounded directly in metric maps, but require semantic entities, relational structure, and symbolic reasoning over space \cite{maggio_clio_2024} \cite{rana2023sayplangroundinglargelanguage}.
+%Graphical Models (GMs) and Probabilistic Graphical Models (PGMs) provide an expressive framework for constructing such world representations.
+Models based on graph structures provide an expressive framework for constructing such required world representations. In particular, factor graphs and scene graphs have emerged as the two most prominent, yet complementary graph-based approaches that bridge perception, estimation, and reasoning. 
+
+Initially, based on the insight that probabilistic approaches were much better suited to cope with the uncertainty inherent in robotic applications than deterministic ones, Probabilistic Graphical Models (PGMs) and especially factor graphs became very successful in robot perception and especially in simultaneous localization and mapping (SLAM) \cite{luca_carlone_slam_2025}.  
+%Robot environments are unpredictable, sensor measurements are incomplete and noisy, actuation is partially uncertain and internal world models are approximate (ref). 
+They offer a very suitable mathematically grounded uncertainty-aware representation of the environment, explicitly modeling the dependencies between uncertain robot states, landmarks, objects and noisy sensor measurements into a unified PGM, see e.g.,  \cite{dellaert_factor_2021}, \cite{dellaert_factor_2017}. Their formulation enables scalable inference through optimization, making them well suited for common robotic tasks such as SLAM, sensor fusion in the presence of noise and partial observability \cite{dellaert_factor_2017}, but also probabilistic approaches for planning and control \cite{mukadam2018continuous}. 
+Scene graphs, on the other hand, emphasize structure and semantics by representing the environment as entities (nodes, subjects, and objects) and relations (edges, predicates). They capture spatial, functional, and semantic relationships at multiple levels of abstraction by inferring concepts from the raw perception \cite{chang_comprehensive_2023}, \cite{catalano_3d_2025}.
+Recent works such as \cite{hughes_hydra_2022}, \cite{bavle_s-graphs_2025} 
+increasingly combine these paradigms, yielding hybrid representations in which factor graphs provide a probabilistic mathematical model of the geometric aspects of the environment while scene graphs support semantic abstraction and reasoning in parallel.
+
+Factor and scene graphs were originally widely adopted in static robotic world representations. However, those are fundamentally limited in real-world settings, as most environments for mobile robot applications such as homes, offices, construction sites, or warehouses, are inherently dynamic \cite{wang_-depth_2025}, \cite{bavle_slam_2023}. 
+Objects move, humans interact with and alter the environment, furniture is rearranged, doors open and close, and entire structures evolve over time.
+All of these dynamic processes can be organized across different temporal scales, ranging from  continuously moving agents to long-term structural changes, as described later in more detail. 
+Static maps implicitly assume permanence and consistency, making them less accurate when employed in situations presenting persistent motion or long-term changes \cite{bescos_dynaslam_2018}. 
+This mismatch leads to, for example, a decreased localization accuracy, incorrect data association, spurious landmarks, and eventually  failures in downstream tasks.
+Moreover, static representations cannot capture temporal phenomena such as object lifetimes, motion patterns, or recurring routines, essential for future state prediction and long-term robot autonomy \cite{catalano_aion_2025}, \cite{schmid_khronos_2024}.
+
+These limitations have motivated a growing body of research on dynamic world representations, where time, changes, and uncertainty are paramount and the center of attention, and also led to  related extensions of models based on factor and scene graphs. They enable robots not only to estimate \textit{what is currently true}, but also to reason about \textit{what has changed}, \textit{what persists}, and \textit{what is likely to happen next} from a lower geometric and uncertainty grounded space up to higher semantic and abstracted layers\cite{schmid_khronos_2024} \cite{morris_dynosam_2025}. As the number of such solutions is currently quickly expanding, this review aims to organize this landscape by addressing three main research questions:
+\begin{enumerate}
+    \item \textbf{Which representations (world models) based on factor and scene graphs  exist for robotic autonomy in dynamic environments?} \\
+    We analyze the strengths and limitations of the usage of factor graphs, scene graphs and especially hybrid representations with respect to a taxonomy of dynamic aspects of the environment.
+    \item \textbf{How can such representations be constructed and maintained?}\\
+    We review methods for perception, data association, temporal modeling, uncertainty handling, and inference using graph-based approaches, highlighting how different works generate dynamic world models from sensor data.
+    \item \textbf{How can such representations be exploited?}\\
+    We examine how dynamic graph-based world models can be used for downstream tasks such as navigation, manipulation, task planning, predictive interaction and semantic reasoning, and how evaluation metrics can be used for an assessment. 
+\end{enumerate}
+By organizing and assessing existing works around these questions, this review provides a  structured perspective on spatio-temporal scene modeling through the specific use of graph-based representations, namely factor graphs and scene graphs, showcasing current trends and identifying open challenges, to provide a foundation for future research in long-term, robust robotic situational awareness in dynamic environments \cite{bavle_slam_2023}. 
+This review is not only a catalog of existing approaches, but also discusses a conceptual combination of factor and scene graphs for dynamic world modeling. We intentionally organize prior work through the lens of representational choices, inference structure, and temporal dynamics.
+
+% The remainder of the paper is organized as follows.
+\begin{comment}We first explore the current state of the art of surveys related to (dynamic) world modeling and their combination with PGMs and GMs in ~\ref{sec:background}, motivating the need for this survey. 
+Then, we analyze how factor graphs, scene graphs and their combined use are exploited for dynamic world model representation in ~\ref{sec:dyn_world_model_representations}, later focusing specifically on how dynamics are handled within them in ~\ref{sec:dynamics_representations}.
+In parallel, we present a general pipeline for the dynamic world model construction employing factor and scene graphs in ~\ref{sec:construction_pipeline}, then focusing on the dynamics' integration and modeling in \ref{sec:modeling_dynamics}.
+Thereby, we show how dynamic world model coupled with PGMs are used, first showing common interaction paradigms in ~\ref{sec:querying_reasoning_action} and then overseeing other general applications in ~\ref{sec:applications}.
+Finally, we present a comparative taxonomy of representative works in ~\ref{sec:taxonomy}, and the commonly used evaluation protocols, datasets, and metrics for testing in ~\ref{sec:evaluation_metrics}, concluding this survey highlighting the open challenges identified and outlining future research directions in ~\ref{sec:challenges_future_works}.
+Figure \ref{fig:unifying_view_SG_FG} summarizes the overall architecture of a hybrid probabilistic graph-based dynamic world model that this work follows.
+\end{comment}

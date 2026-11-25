@@ -1,0 +1,160 @@
+\section{Open Challenges and Future Directions}\label{sec:challenges_future_works}
+% The challenges outlined in this section directly relate to the three research questions posed in the Section \ref{sec:introduction}. 
+% While Sections \ref{sec:dyn_world_model_representations}–\ref{sec:taxonomy} surveyed how dynamic world models are currently represented, constructed, and employed, the following discussion highlights where each of these questions remains only partially resolved. 
+% In particular, the challenges below reflect open issues in (i) the integration of probabilistic and semantic representations (RQ1), (ii) robust construction and inference under severe dynamics and uncertainty (RQ2), and (iii) scalable, long-term use of dynamic world models in realistic robotic settings (RQ3).
+
+% Despite significant progress in dynamic world modeling through probabilistic graphical representations, several fundamental challenges remain unresolved. 
+% These challenges arise not from isolated algorithmic limitations, but from system‑level tensions between geometry and semantics, expressiveness and scalability, and short‑term estimation and long‑term autonomy. 
+% This section outlines key open problems and promising research directions.
+The works surveyed throughout this paper collectively demonstrate that probabilistic graph-based representations, i.e. combining factor graphs for geometric consistency with scene graphs for semantic abstraction, form a powerful paradigm for dynamic world modeling.
+Yet the synthesis presented in Sections \ref{sec:dyn_world_model_representations}–\ref{sec:taxonomy} shows that this paradigm is still evolving. 
+Several fundamental tensions remain unresolved: between geometric uncertainty and semantic expressiveness, between short-term agent tracking and lifelong change detections, between representational richness and computational tractability, and between single-robot operation and distributed autonomy.
+This section organizes open challenges around the three research questions presented in Section \ref{sec:introduction}, clarifying where the field has progressed and where substantial work remains.
+The challenges identified below are not independent.
+The surveyed literature suggests a dependency structure rather than an absolute ranking of importance: reliable representation and estimation provide the basis for maintaining a consistent world model across time and agents, while such persistent representations are in turn required for reliable long-horizon exploitation.
+Therefore, we distinguish (i) representation and estimation foundations, including uncertainty handling and robust association; (ii) maintenance and scalability challenges, including lifelong and distributed world modeling; and (iii) exploitation challenges, including uncertainty-aware planning, active perception, and task reasoning. 
+Evaluation remains a cross-cutting requirement for assessing progress at all three levels.
+
+\subsection{Representation: What to Model and How}\label{sec:open_challenges_representation}
+\paragraph{Uncertainty Propagation}
+The uncertainty types presented in Section \ref{sec:uncertainty_types} reveal that the FG-SG boundary is not a single uncertainty-propagation problem, but an interface among heterogeneous uncertainty types. 
+Geometric-state uncertainty is comparatively well formalized within factor graphs, while semantic, association, existence, and relational uncertainties are represented using different probabilistic, learned, or heuristic mechanisms.
+The central challenge is therefore not only to propagate covariance from the geometric layer, but to preserve and combine these heterogeneous beliefs as information crosses representation layers, as illustrated in Figure \ref{fig:FG_SG_uncertainty_boundary}.
+Within the factor graph layer, uncertainty is principled: variables carry covariance (or information) matrices, factors are weighted according to measurement quality, and the Hessian of the non-linear least-squares problem propagates uncertainty globally through the graph \cite{dellaert_factor_2017}. 
+In many hybrid systems, this stops at the interface between layers.
+In layered-stack architectures, the most prevalent pattern, scene graph nodes are often instantiated from the geometric layer without inheriting pose uncertainty, such that a node extracted from a poorly constrained region of the map may be treated with the same confidence as one from a well-constrained area.
+The unified optimizable graph pattern (e.g. S-Graphs \cite{bavle_s-graphs_2025}, DynEMo-SLAM \cite{giberna_dynemo-slam_2025}) partially mitigates this by representing semantic entities as factor graph variables. 
+However, propagation of geometric uncertainty into \textit{relational} edges remains largely unaddressed (e.g. how certain is an \textit{on} relation given the covariance of both object pose nodes?).
+The work of Millan-Romera et al. \cite{millanromera2026generationuncertaintyawarehighlevelspatial} is a step toward learned uncertainty estimates for semantic factors, but a general framework for uncertainty-aware scene-graph relations in dynamic environments does not yet exist.
+Lost \& Found \cite{behrens_lost_2025} explicitly acknowledges that principled uncertainty quantification for tracked object states under interaction is a critical missing piece. 
+
+A symmetric and largely unexamined problem exists at the opposite boundary too, between the perception front-ends and the factor graph itself.
+The probabilistic machinery described in Section \ref{sec:background} rests on the assumption of zero-mean, temporally independent Gaussian measurement noise. 
+As front-ends increasingly replace geometric primitives with learned geometric priors, this assumption is systematically violated: monocular depth foundation models, designed for single images, exhibit temporally inconsistent, flickering predictions across consecutive frames of a video \cite{video_depth_anything}, producing errors that are correlated over time and biased rather than zero-mean. 
+Such errors are particularly damaging for dynamic entities, where the multi-view temporal fusion used to stabilize depth on static structure \cite{video_depth_anything} is unavailable, since independent object motion breaks the underlying temporal consistency constraints.
+While learned depth and its uncertainty have been integrated into factor graph estimation for the static case \cite{bloesch2018codeslam} \cite{yang2020d3vo}, no equivalent framework calibrates the error statistics of learned geometric priors before their injection into dynamic-entity factors; the learned semantic covariances of \cite{millan-romera_learning_2024} address the semantic factor class only.
+
+Closing these gaps, at both perception-factor graph and factor graph-scene graph boundaries, appears increasingly important for safety-critical deployment, where a robot must know not only \textit{what} its world model asserts, but also \textit{how much} to trust each assertion.
+
+\paragraph{Non-Rigid Deformation Modeling}
+The surveyed works are largely restricted to rigid-body dynamics: agents are modeled as rigid objects with 6-DoF pose trajectories, and structures are assumed piecewise rigid.
+Non-rigid deformation, such as soft objects, cloth, liquids, deformable tools, remains almost entirely absent from probabilistic graph-based representations.
+The body-model comparison in Section \ref{sec:dynamics_representations_agents} and Table \ref{tab:body_models} shows the spectrum: SMPL-family parametric models handle articulated human motion through skeletal kinematics, but treat the body surface as a predefined template with limited expressiveness for atypical morphologies or extreme deformation, while neural representations such as InstantAvatar \cite{jiang2022instantavatar} use subject-specific, higher dimensional representations that are less directly suited to integration as factor-graph state variables . 
+Extending factor graphs to non-rigid entities requires defining suitable state spaces, motion priors, and measurement models, a challenge connected to the broader problem of deformable SLAM and still an open research frontier \cite{luca_carlone_slam_2025}.
+
+\paragraph{Completeness of Dynamics Coverage}
+As summarized by Table~\ref{tab:taxonomy_overview} (Section~\ref{sec:taxonomy}), no current system in the surveyed literature handles all three levels of dynamics (continuously moving agents, semi-static changes, and long-term structural evolution) simultaneously within a single unified probabilistic framework.
+Systems that handle agents well (DynoSAM \cite{morris_dynosam_2025}, AirDOS \cite{qiu2022airdos}) typically do not model semi-static change; systems that handle semi-static change well (Khronos \cite{schmid_khronos_2024}, DynEMo-SLAM \cite{giberna_dynemo-slam_2025}) generally lack principled lifelong structural maintenance.
+This gap reflects not only engineering constraints but also a deeper modeling difficulty: these dynamics occur at timescales that differ by order of magnitude, and the most effective probabilistic treatments are not trivially composable (e.g.  tightly-coupled factor-graph optimization for agent motion, persistence/decay mechanism for semi-static change, and inter session change detection with loop closure for structural evolution).
+Unifying these regimes without sacrificing tractability remains an open problem.
+
+\paragraph{Metric Scale Observability of Dynamic Entities under Minimal Sensing}
+A structural pattern visible in Table \ref{tab:taxonomy_overview} but rarely made explicit in the literature is that the coverage of dynamics reported above is conditioned on metrically informative sensing: nearly all surveyed factor-graph formulations rely on stereo, RGB-D, or LiDAR input \cite{bescos_dynaslam_2021} \cite{morris_dynosam_2025} \cite{qiu2022airdos} \cite{gou_visual_2024}. 
+This is not incidental. For an independently moving entity observed monocularly, the entity's structure scale, its motion, and the ego-motion scale are mutually entangled: unlike static structure, whose metric scale can be recovered from inertial measurements or transferred from the ego solution, the observed image displacements of a dynamic entity hinder ego-motion and object motion, making ratio-based scale transfer invalid.
+The few monocular systems that do estimate dynamic entities resolve this only through strong metric priors: learned object dimensions \cite{yang_cubeslam_2019}, parametric human body models \cite{henning_bodyslam_2022} \cite{henning_bodyslam_2023}, or rigid-body kinematic structure \cite{qiu2022airdos}.
+Existing analyses of dynamic SLAM formulations address coordinate frame choices \cite{morris_importance_2024} and estimation efficiency \cite{henein_dynamic_2020}, but to the best of our knowledge no principled observability analysis exists that characterizes which components of a dynamic entity's $SE(3)$ trajectory and scale are recoverable given a specific sensor suite, nor which shared static structure can serve as a metric anchor in the absence of direct depth. 
+Closing this gap is a precondition for deploying the dynamic world models surveyed here on low-cost, weight-constrained platforms such as micro aerial vehicles and AR devices, where monocular-inertial sensing is often the only option.
+
+% \paragraph{Gaussian Splatting as a Geometric Substrate}
+% \textcolor{red}{\sout{
+% 3D Gaussian Splatting (3DGS) \cite{kerbl_3d_2023}, a differentiable, high-fidelity alternative to point clouds and meshes, is an emerging geometric substrate not yet integrated with the probabilistic graph-based frameworks surveyed here.
+% Dynamic extensions} \cite{matsuki_gaussian_2024} \cite{zheng_wildgs-slam_2025} \cite{li_dynagslam_2025}  \cite{xu_dg-slam_2024} } \textcolor{red}{\sout{separate static and dynamic Gaussian primitives, but largely follow an outlier-rejection paradigm rather than a probabilistic SLAMMOT formulation. 
+% A natuaral next step is a tripartite representation in which a factor graph provides the probabilistic trajectory backbone, a Gaussian-splatting layer the geometric-photometric substrate, and a scene graph the relational semantic abstraction, raising open questions on propagating factor-graph uncertainty into Gaussian primitives, extracting scene-graph entities from Gaussian fields, and jointly optimizing all three layers in real time.}}
+% A significant emerging direction, not yet fully integrated into the probabilistic graph-based frameworks, is 3D Gaussian Splatting (3DGS) \cite{kerbl_3dgs_2023} as a geometric scene representation for SLAM. 
+% 3DGS represents the scene as a collection of differentiable 3D Gaussian primitives, each with position, covariance, opacity, and appearance parameters, enabling high-fidelity real-time rendering. 
+% Its differentiability and explicit geometry make it attractive as an alternative to point clouds and meshes as the geometric substrate of hybrid world models. 
+% Early GS-SLAM systems \cite{matsuki_gaussian_2024} report competitive tracking accuracy alongside substantially improved rendering quality. 
+% Extensions to dynamic scenes, such as DG-SLAM \cite{xu_dg-slam_2024}, WildGS-SLAM \cite{zheng_wildgs-slam_2025}, DynaGSLAM \cite{li_dynagslam_2025}, suggest that Gaussian primitives can be separated into static and dynamic components and tracked over time, although many current systems still resemble the outlier-rejection paradigm (e.g. masking dynamic Gaussians) rather than integrating them into a probabilistic SLAMMOT formulation. 
+% Semantic GS-SLAM approaches \cite{lu_gsff-slam_2025} \cite{li2024sgs} further embed feature fields into the Gaussian representation, moving toward the semantic abstraction needed for scene-graph construction. 
+% A natural next step is a tripartite representation in which a factor graph provides the probabilistic trajectory backbone, a Gaussian-splatting layer provides the geometric-photometric substrate, and a scene-graph layer provides relational semantic abstraction. 
+% Realizing this integration raises concrete open questions: how to propagate factor-graph uncertainty into Gaussian-primitive uncertainty, how to extract scene-graph entities from Gaussian fields in a way that respects probabilistic structure, and how to jointly optimize all three layers within real-time budgets.
+
+\subsection{Construction and Maintenance: How to Build and Maintain}\label{sec:open_challenges_construction}
+The maintenance challenges in this section build on the representation-level issues above. Uncertainty, association and entity-state errors that are unresolved within a single-session world model do not disappear when operation is extended over time or across robots. Instead, they can accumulate across graph updates, sessions and inter-robot exchanges.
+Lifelong and distributed operation therefore introduce additional scalability and consistency requirements on top of these estimation foundations.
+
+\paragraph{Scalable Lifelong Graph Maintenance}
+Long-term autonomy requires world models that remain tractable and accurate across sessions separated by hours, days, or months.
+DPG-SLAM \cite{walcott-bryant_dynamic_2012} established a core principle: a graph cannot grow indefinitely, and an explicit forgetting policy, such as pruning nodes when they no longer contribute topological information, is essential for lifelong operation.
+LT-mapper \cite{kim2022lt} demonstrated this principle at large scale for outdoor LiDAR SLAM. 
+However, as the dynamics and structural complexity of the environment increase, the decision between what to keep and what to discard becomes harder to resolve reliably.
+Many existing forgetting policies are primarily geometric or heuristic, and do not explicitly reason about the downstream utility of information for future tasks.
+A promising direction is task-informed graph maintenance \cite{maggio_clio_2024}, where the decision to retain, update or prune nodes is conditioned on anticipated task distributions, eventually linking memory management to the planning and interaction layers described in Sections \ref{sec:applications} and \ref{sec:querying_reasoning_action}.
+
+\paragraph{Open-Vocabulary Association under Severe Dynamics}
+The shift toward open-vocabulary perception is a significant advance, but current open-vocabulary systems are often evaluated under relatively controlled conditions.
+Under severe dynamics, like dense crowd occlusion, rapid viewpoint change, and simultaneous motion of many agents, the vision-language embeddings used for association (e.g. CLIP features in \cite{yan_dynamic_2025}, \cite{gu_conceptgraphs_2023}) may become unstable, and the lack of closed-form data-association uncertainty increases vulnerability to catastrophic misassociations. 
+Integrating open-vocabulary perception into principled multi-hypothesis association frameworks (Section \ref{sec:construction_pipeline_data_association}) within this domain remains open, as does the question of how to bound false-association rates in scenes with many visually similar entities in motion.
+
+\paragraph{Multi-Robot Shared Dynamic World Models}
+As shown in Table~\ref{tab:taxonomy_overview}, explicit multi-robot capability (MR) is rare. Among the surveyed systems CURB-SG \cite{greve_collaborative_2024} explicitly evaluates collaborative mapping. 
+Multi S-Graphs \cite{fernandez-cortizas_multi_2024} demonstrates that semantic-relational information can be exchanged efficiently to improve map merging, but extending this to dynamic entity tracking, where an agent observed by robot \textit{A} must be correctly associated with the track maintained by robot \textit{B} despite occlusion, viewpoint and time differences, introduces cross-agent data-association challenges that remain largely unaddressed. 
+PMBM-based formulations \cite{ge2025batch} offer a theoretically grounded starting point towards a distributed extension, but have not yet been coupled to scene-graph-level semantic reasoning and maintenance policies.
+
+\subsection{Exploitation}
+The applications surveyed in Section \ref{sec:applications}  show that hybrid representations can combine probabilistic geometric estimation with semantic-relational capabilities across a broad range of downstream tasks. 
+Yet the exploitation layer reveals its own set of open challenges, which are distinct from the representation and maintenance gaps above: even a perfectly maintained world model cannot be fully exploited by current task-level systems.
+These challenges therefore occupy a downstream level of the dependency structure: reliable representation and maintenance are necessary inputs to task-level reasoning, but are not sufficient to guarantee effective exploitation.
+
+\paragraph{Uncertainty-Aware Downstream Tasks and Proactive Planning under Dynamics}
+The probabilistic machinery underlying factor graphs produces rich uncertainty estimates, such as pose covariances and existence probabilities for dynamic entities, that are largely discarded at task execution time. 
+In practice, planners exploit scene graph nodes as point estimates, manipulation systems act on deterministic object poses, and task reasoners treat scene state as binary truth, regardless of how well constrained the underlying map is. 
+This disconnection is particularly problematic near the boundaries of map reliability, where sparse loop closures or recent dynamics induce high uncertainty but do not influence decision-making. 
+Planning over scene graphs has begun to address graph updates \cite{ejaz2025situationallyawarepathplanningexploiting}, yet broader questions remain open: how map uncertainty should affect task selection, action sequencing, or the decision to actively seek additional observations. 
+A closely related limitation appears in planning under dynamics. 
+Current systems either replan reactively when scene graph nodes change or invalidate precomputed paths \cite{ejaz2025situationallyawarepathplanningexploiting}, while predictive approaches, such as Aion’s temporal flow statistics \cite{catalano_aion_2025} or trajectory forecasting from scene graph context \cite{gorlo_long-term_2024}, remain decoupled from probabilistic task planning. 
+Bridging factor-graph uncertainty and predictive temporal models into task-level planning objectives, so that actions are conditioned on the expected future state of the world rather than its instantaneous estimate, remains a largely open challenge.
+
+\paragraph{Closing the Exploitation-to-Representation Loop: Active Perception}
+All surveyed systems are effectively open-loop between exploitation and representation: task execution consumes the world model but does not feed information back to guide its refinement. 
+A robot that fails to grasp an object because its pose estimate was uncertain has acquired evidence about which part of the map is unreliable, but no current system uses task-execution outcomes to trigger targeted re-observation or prioritize re-mapping of specific regions. 
+The active perception literature addresses related problems, but largely in isolation from the structured world models surveyed here. 
+Coupling the task layer to the maintenance layer, so that downstream failures or high-uncertainty decisions trigger directed exploration to reduce map uncertainty in task-relevant regions, would close the loop between the three research questions. 
+This direction is conceptually previewed by task-informed graph pruning in Clio \cite{maggio_clio_2024}, which uses task context to decide what to retain, but the inverse direction, using task failures to decide what to re-observe, remains entirely open.
+
+\paragraph{Temporal Consistency of Language-Grounded Task Plans}
+Systems like SayPlan \cite{rana2023sayplangroundinglargelanguage} and SG-Nav \cite{yin2024sgnav} ground natural language instructions in scene graph state to produce task plans. 
+This grounding is computed at a single moment in time and assumed stable for the duration of task execution. 
+In dynamic environments, however, the scene graph changes continuously: objects are displaced by human interaction, agents move, doors open and close. 
+A task plan grounded in a scene graph that was valid at planning time may refer to entities or relations that no longer hold at execution time, leading to silent failures that are difficult to detect and recover from. 
+No current system monitors the temporal consistency between an active task plan and the evolving world model, or triggers re-planning when the graph changes in ways that invalidate the current plan's preconditions. 
+This is particularly acute for multi-step manipulation tasks in human-populated environments, where the interval between planning and execution may span multiple human interactions. 
+The connection between dynamic graph update policies (Section~\ref{sec:construction_pipeline_graph_maintenance}) and plan validity monitoring is entirely unaddressed in the surveyed literature.
+
+\paragraph{Evaluation Gap: Task Performance as a Function of World Model Quality}\label{sec:open_challenges_metrics_gap}
+A methodological gap cuts across all exploitation challenges: there is currently no benchmark or evaluation protocol that measures downstream task performance as a function of world model accuracy under dynamics.
+Task-conditioned evaluation is therefore cross-cutting rather than a final stage of this hierarchy: it is needed to determine whether progress at the representation, maintenance or exploitation level produces measurable improvements in robotic performance. 
+A rigorous characterization of this propagation chain requires more than evaluating each module independently. 
+Ideally, upstream perception quality should be perturbed or stratified systematically and its effect measured at successive levels: association accuracy, geometric state estimation, scene-graph correctness, and task success.
+The surveyed literature rarely performs such end-to-end sensitivity analysis, making it difficult to determine which upstream errors dominate downstream robotic performance or where additional robustness provides the greatest practical benefit.
+This limitation stems primarily from the lack of challenging datasets in which the tight integration of dynamic handling and reasoning is required for the system to succeed on them.
+Most work relies on commonly used and accepted datasets (Section ~\ref{sec:evaluation_metrics_datasets}) which are not built to create a realistic, challenging scenario regarding the dynamicity level of the environment. 
+This results in under-validated works or the requirement for them to generate self-collected datasets to showcase the effective benefit of the proposed contributions \cite{giberna_dynemo-slam_2025}.
+This limitation is compounded by a more basic one: accurate 6-DoF ground truth for the dynamic entities themselves is essentially only available inside motion-capture volumes \cite{sturm_benchmark_2012}\cite{palazzolo2019iros}\cite{judd_oxford_2019}, restricting validation to room-scale scenes, or as human-annotated 3D bounding boxes in driving benchmarks\cite{geiger_are_2012}\cite{caesar_nuscenes_2019}, whose accuracy and domain do not transfer to indoor and mixed indoor-outdoor robotics. 
+No existing dataset provides metrically accurate object trajectories for handheld or robot-mounted sequences at building scale, which is the regime targeted by most systems in Table \ref{tab:taxonomy_overview}, and a further reason why simulation\cite{rosinol_kimera_2021}\cite{tartanair2020iros} and self-collected data \cite{giberna_dynemo-slam_2025} dominate current evaluations.
+Existing evaluation protocols (Section~\ref{sec:evaluation_metrics_protocols}) assess trajectory accuracy, map geometry, graph structure, and tracking metrics largely in isolation from task outcomes. 
+The connection between, for instance, a 10\% increase in object pose RMSE under crowded dynamics and the resulting manipulation success rate degradation is not measured by any of the surveyed evaluation frameworks. 
+This gap makes it difficult to quantify the practical benefit of more accurate dynamic world models for robotic autonomy, and to motivate the computational cost of the more expressive representations described in this survey. 
+Developing task-conditioned evaluation protocols, where world model quality is assessed through its effect on downstream task success under varying levels of environmental dynamics, would provide a more grounded benchmark for future progress. 
+This connects naturally to the consecutive task execution protocols already adopted by works like DovSG \cite{yan_dynamic_2025}, which could be extended to include controlled degradation of world model quality as an independent variable.
+
+% \bigskip
+% %% Conclusion
+% The open challenges above allow the three research questions presented in Section \ref{sec:introduction} to be summarized. 
+% Regarding \textit{which representations} are suited to dynamic environments, the taxonomy shows that no single graph stack dominates; instead, key limitations arise at the interfaces between paradigms (notably uncertainty transfer across the FG-SG boundary and incomplete coverage across dynamics timescales). 
+% Regarding \textit{how representations can be constructed and maintained}, the pipeline is increasingly well understood for single sessions with moderate dynamics, but scalable lifelong maintenance, robust open-vocabulary association under severe dynamics, and multi-robot shared construction remain unresolved. 
+% Regarding \textit{how representations can be exploited}, downstream capabilities are already broad, yet their reliability depends on representations that remain consistent under change and can quantify confidence across geometric and semantic layers. 
+% In this context, tighter integration between probabilistic factor graphs, semantically rich scene graphs, and emerging dense geometric substrates, in our view, one of the central challenges, and a promising direction, for long-term robotic situational awareness in dynamic environments.
+
+
+% Relating to RQ1 and RQ2, a central unresolved issue in hybrid world model is the \textbf{propagation of uncertainty across representational layers}. 
+% Factor graphs provide well defined probabilistic semantics, enabling principled uncertainty estimation over robot poses, landmarks and dynamic entities.
+% Scene graphs, on the other hand, typically operate at a symbolic or relational level, where uncertainty is either abstracted away or represented through heuristic confidence scores.
+
+% Existing systems show this disconnection. 
+% Kimera explicitly maintains Bayesian uncertainty at the geometric layer, but higher-level scene graph entities are largely deterministic abstractions of optimized geometry.
+% On the other side, belief-augmented scene graph approaches highlight the importance of uncertainty for object persistence and prediction, yet lack a mechanism to ground this belief in trajectory-level covariances.
+% Bridging this gap requires representations in which semantic entities inherit and transform uncertainty from underlying geometric estimates, enabling queries such as confidence-aware planning or risk-sensitive reasoning.
+
+% Promising directions include dynamic or belief-augmented scene graphs with explicit probabilistic semantics, joint optimization of relational and geometric variables, and interfaces that translate continuous uncertainty into relational belief updates.
+% However, a general, scalable solution for uncertainty-consistent FG-SG integration remains open.

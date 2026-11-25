@@ -1,0 +1,174 @@
+\documentclass{ieeeaccess}
+\usepackage{comment}
+\usepackage[nocompress]{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage[usenames,dvipsnames]{xcolor}
+% \usepackage{todonotes}
+\usepackage{amsmath}
+\usepackage{leftidx}
+\usepackage{siunitx}
+\usepackage{multirow}
+%\usepackage{titlesec}
+\usepackage{footnote}
+\usepackage[utf8]{inputenc}
+\usepackage{array}
+\usepackage{mdwmath}
+\usepackage{mdwtab}
+\usepackage{eqparbox}
+\usepackage{url}
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithm2e}
+\RestyleAlgo{ruled}
+\usepackage{textcomp}
+\usepackage{lettrine}
+\usepackage[font=small]{caption}
+\usepackage{subcaption}
+\usepackage[export]{adjustbox}
+\usepackage{leftidx}
+\usepackage{siunitx}
+\usepackage{multirow}
+\usepackage{balance}
+\usepackage[export]{adjustbox}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{balance}
+\newcommand{\rulesep}{\unskip\ \vrule\ }
+\setlength{\belowcaptionskip}{-0.5pt}
+\usepackage{makecell}
+\usepackage{soul}
+\usepackage{censor}
+\usepackage{tabularx}
+\usepackage{pifont} % \ding{51} \ding{55}
+\usepackage{silence}
+\WarningFilter{xcolor}{Incompatible color definition}
+\usepackage[normalem]{ulem}
+
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+\newcommand{\na}{--}
+
+% A compact X column type (ragged-right)
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+\renewcommand{\arraystretch}{1.00}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\atantwo}{atan2}
+
+\newcommand{\boldparagraph}[1]{\vspace{0.3em}\noindent{\bf #1} }
+
+\newtheorem{definition}{Definition}
+\definecolor{tablehighlight}{RGB}{255, 255, 0} 
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\begin{document}
+\history{Date of publication xxxx 00, 0000, date of current version xxxx 00, 0000.}
+\doi{10.1109/ACCESS.2017.DOI}
+
+\title{A Review Of Robotic World Models For Dynamic Environments Based On Factor And Scene Graphs}
+\author{\uppercase{Marco Giberna}\authorrefmark{1}, \uppercase{Miguel Fernandez-Cortizas}\authorrefmark{1}\IEEEmembership{Member, IEEE},
+\uppercase{Jose Luis Sanchez-Lopez}\authorrefmark{1}\IEEEmembership{Senior Member, IEEE}, and \uppercase{Holger Voos}\authorrefmark{1}\authorrefmark{2},
+\IEEEmembership{Member, IEEE}}
+\address[1]{Automation and Robotics Research Group, Interdisciplinary Centre for Security, Reliability and Trust (SnT), University of Luxembourg, 1855 Luxembourg, Luxembourg}
+\address[2]{Faculty of Science, Technology and Medicine, University of Luxembourg, 4365 Esch-sur-Alzette, Luxembourg}
+%\address[2]{Department of Physics, Colorado State University, Fort Collins, 
+%CO 80523 USA (e-mail: author@lamar.colostate.edu)}
+\tfootnote{This work was partially funded by the Fonds National de la Recherche of Luxembourg (FNR) through the DEUS project (Ref. C22/IS/17387634/DEUS) and the project PCS-GRAPHS (Ref. C25/IS/19613768/PCS-GRAPHS).}
+
+\markboth
+{Giberna \headeretal: Preparation of Papers for IEEE TRANSACTIONS and JOURNALS}
+{Giberna \headeretal: Preparation of Papers for IEEE TRANSACTIONS and JOURNALS}
+
+\corresp{Corresponding author: Marco Giberna (e-mail: marco.giberna@uni.lu).}
+
+\begin{abstract}
+Models based on graphs have emerged in robotics as a powerful foundation for internal world representations, where factor and scene graphs are among the most prominent model types found in the related literature and in successful robotic solutions. Initially, many of these models were assuming static environments as a simplification.
+%to focus more on the problems of coping with uncertain sensing and representing complex structured surroundings. 
+Herein, factor graphs mainly provide uncertainty-aware geometric estimations while scene graphs enable a structured semantic abstraction.  However, real-world robotic environments are often dynamic, posing severe challenges for purely static world representations. Therefore, this review presents a  broad structured view on how dynamic aspects of real-world environments can be addressed in such graph-based world models. 
+%and especially in SLAM approaches. 
+We organize our assessments around three main aspects: (I) suitable representations, (II) pipelines to construct and update the representations, and (III) their exploitation for downstream tasks. 
+We review approaches that are either based on factor or scene graphs, but put special emphasis on novel approaches that combine both types to form hybrid models. We mainly analyze how different types of dynamics can be modeled herein, and categorize common architectural patterns. 
+Finally, emerging trends and open challenges are identified, including uncertainty propagation from learned perception through the representation layers, the observability of dynamic-entity motion and scale under minimal sensing, scalable lifelong maintenance, and the lack of datasets and evaluation protocols that ground world-model quality in downstream task performance under dynamics.
+\end{abstract}
+
+\begin{keywords}
+Factor Graphs, Scene Graphs, Robotic World Models, SLAM, Autonomous Mobile Robots\end{keywords}
+
+\titlepgskip=-15pt
+
+\maketitle
+\input{Sections/introduction}
+\input{Sections/background_new}
+\input{Sections/taxonomy}
+\input{Sections/dyn_world_model_representation_new}
+%\input{Sections/dynamics_types}
+%% How to create it
+\input{Sections/construction_pipelines}
+%\input{Sections/modeling_dynamics}
+%% How to use it
+\input{Sections/querying_reasoning_actions}
+\input{Sections/applications}
+\input{Sections/evaluation_metrics}
+
+\input{Sections/taxonomy_works}
+%% Conclusion and open challenges
+\input{Sections/open_challenges}
+\input{Sections/conclusion}
+
+% \section*{Acknowledgment}
+% M.G. Author thanks Laura Ribeiro for her valuable help in proofreading this manuscript. 
+
+\bibliographystyle{IEEEtran}
+\bibliography{bibliography, references}
+
+
+%\begin{thebibliography}{00}
+
+%\bibitem{b1} G. O. Young, ``Synthetic structure of industrial plastics,'' in \emph{Plastics,} 2\textsuperscript{nd} ed., vol. 3, J. Peters, Ed. New York, NY, USA: McGraw-Hill, 1964, pp. 15--64.
+
+%\end{thebibliography}
+
+%\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{a1.png}}]{First A. Author} (M'76--SM'81--F'87) and all authors may include 
+%biographies. Biographies are often not included in conference-related
+%papers. This author became a Member (M) of IEEE in 1976, a Senior
+%Member (SM) in 1981, and a Fellow (F) in 1987. The first paragraph may
+%contain a place and/or date of birth (list place, then date). Next,
+%the author's educational background is listed. The degrees should be
+%listed with type of degree in what field, which institution, city,
+%state, and country, and year the degree was earned. The author's major
+%field of study should be lower-cased.
+
+%The second paragraph uses the pronoun of the person (he or she) and not the 
+%author's last name. It lists military and work experience, including summer 
+%and fellowship jobs. Job titles are capitalized. The current job must have a 
+%location; previous positions may be listed 
+%without one. Information concerning previous publications may be included. 
+%Try not to list more than three books or published articles. The format for 
+%listing publishers of a book within the biography is: title of book 
+%(publisher name, year) similar to a reference. Current and previous research 
+%interests end the paragraph. The third paragraph begins with the author's 
+%title and last name (e.g., Dr.\ Smith, Prof.\ Jones, Mr.\ Kajor, Ms.\ Hunter). 
+%List any memberships in professional societies other than the IEEE. Finally, 
+%list any awards and work for IEEE committees and publications. If a 
+%photograph is provided, it should be of good quality, and 
+%professional-looking. Following are two examples of an author's biography.
+%\end{IEEEbiography}
+
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,trim={6.5cm 0 1.5cm 0},clip,keepaspectratio]{Pictures/marco_giberna_profile_picture_snt.jpeg}}]{Marco Giberna} received the B.S. degree in computer and electronic engineering from the University of Trieste, Italy, and the M.S. degree in computer and electronic engineering from the University of Trieste, Italy, in 2023. He is currently pursuing the Ph.D. degree with the Automation and Robotics Research Group (ARG), Interdisciplinary Centre for Security, Reliability and Trust (SnT), University of Luxembourg, headed by Prof. Holger Voos. His research interests include robotic perception, situational awareness for autonomous systems, and computer vision.
+\end{IEEEbiography}
+
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,trim={1cm 0 1cm 0},clip,keepaspectratio]{Pictures/MFC_PICTURE.jpeg}}]{Miguel Fernandez-Cortizas (Member, IEEE)} received the B.S. degree in industrial engineering, with a specialization in electronics and automation, and the M.S. and Ph.D. degrees in automation and robotics from the Universidad Politécnica de Madrid, Spain, in 2019, 2020, and 2025, respectively. During his doctoral studies, he was with the Computer Vision and Aerial Robotics Group (CVAR), working on multi-robot aerial systems and autonomous coordination. He has led the development of Aerostack2, a modular open-source framework for autonomous aerial robotics. Since 2025, he has been a Postdoctoral Researcher with the Automation and Robotics Research Group (ARG-SnT), University of Luxembourg, headed by Prof. Holger Voos, where he works on situational graphs and 3D scene graph SLAM for single and multi-robot systems. His research interests include increasing the situational awareness of autonomous robots through the development of cognitive architectures, semantic-relational SLAM, and collaborative SLAM algorithms.
+\end{IEEEbiography}
+
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,trim={2.5cm 0 1cm 0},clip,keepaspectratio]{Pictures/SnT_Portraits_20255444_short.jpg}}]{Jose Luis Sanchez Lopez (Senior Member, IEEE)} is a Permanent Research Scientist at the SnT, University of Luxembourg, and deputy head of its Automation \& Robotics Research Group. He received his PhD in Robotics from the Technical University of Madrid in 2017 and has since been with the University of Luxembourg, with visiting research stays at H BRS, INRIA Rennes, and the University of Zaragoza. His research focuses on enhancing the autonomy, situational understanding, and decision-making capabilities of mobile robots and multi-robot systems for real-world applications. He has authored over 120 peer-reviewed publications, holds one patent, and contributes several open source software components. He has participated in multiple national and European research projects, securing more than €1.8M in competitive funding, and currently supervises 15 PhD students (5 as main supervisor). He serves the research community as an expert evaluator for funding agencies such as the European Commission; with editorial roles for top-tier journals, such as IEEE RA-L and Springer JINR, and conferences, such as IROS; workshop organizer in conferences such as ICRA; and as a PhD thesis committee member. He also teaches at the bachelor and master levels at the University of Luxembourg and engages in outreach activities, including serving as one of Luxembourg’s National Coordinators for the European Robotics Week.
+\end{IEEEbiography}
+
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,trim={5cm 0 7cm 0},clip,keepaspectratio]{Pictures/holger_voos_snt.jpeg}}]{Holger Voos (Member, IEEE)} received the Dipl.-Ing. degree in electrical engineering from Saarland University and the Dr.-Ing. degree in automatic control from the Technical University of Kaiserslautern, Germany. From 2000 to 2004, he was with Bodenseewerk Gerätetechnik GmbH, Germany, as a Systems Engineer, and the Project Manager in aerospace and robotics research and development. From 2004 to 2010, he was a Professor and the Head of the Mobile Robotics Laboratory, University of Applied Sciences Ravensburg-Weingarten, Germany. Since 2010, he has been a Full Professor with the University of Luxembourg and the Head of the Automation and Robotics Research Group, Interdisciplinary Centre for Security, Reliability and Trust (SnT). From 2020 to 2024, he was the Founding Course Director of the New Interdisciplinary Space Master (ISM) Program, Faculty of Science, Technology and Medicine (FSTM). He is the author or co-author of more than 300 publications, comprising books, book chapters, journal and conference papers. His research interests include situational awareness and motion planning and control for autonomous vehicles and robots, and distributed and networked control and automation.
+\end{IEEEbiography}
+
+\EOD
+
+\end{document}

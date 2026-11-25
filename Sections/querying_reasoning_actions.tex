@@ -1,0 +1,120 @@
+\section{Interaction: Querying, Reasoning, and Action}\label{sec:querying_reasoning_action}
+% Query types: symbolic, geomtric, probabilistic.
+% action coupling: planning over abstraction, hierarchical planning, task conditioned subgraphs.
+% dynamic updates: re-perception loops, correcting wrong nodes/edges over time.
+The shift from static environmental representations to \textit{actionable spatio-temporal perception} marks a fundamental transition where the world model is no longer a passive record of geometry but an active substrate for robot reasoning and decision-making \cite{rosinol_3d_2020} \cite{bavle_slam_2023}.
+The convergence of factor graphs, providing metric-semantic consistency, and (3D) scene graphs, offering hierarchical relational logic, enables a rich set of interaction modalities, encompassing multi-modal querying, hierarchical planning, and closed-loop maintenance.
+
+\subsection{Multi-Modal Query Paradigms}\label{sec:querying_reasoning_action_query}
+The literature identifies three primary query modalities that leverage the structured nature of hybrid world models:
+% It misses the link with the dynamic environment!
+
+\noindent\textbf{Geometric-Metric Queries:} leveraging the low-level metric semantic mesh or factor-graph-backed pose and places layers, agents execute queries for fast collision checking via Bounding Volume Hierarchies\cite{rosinol_kimera_2021} and metric path planning\cite{catalano_3d_2025}, e.g. $A^*$ or Dijkstra.
+
+\noindent\textbf{Symbolic-Semantic Queries:} hierarchical 3D Scene Graphs support high level symbolic commands, such as ``get the medication bottle from the nightstand''\cite{catalano_3d_2025}, often assisted by LLMs to achieve long-term trajectory prediction\cite{gorlo_long-term_2024}. 
+By grounding abstract terms in specific room or object nodes, the model resolves spatial relationships, such as \textit{on}, \textit{inside}, to isolate target entities.
+These language-grounded mechanisms operate primarily at the exploitation layer: they consume semantic and relational world-model state rather than replacing the geometric estimation machinery used to construct it. 
+Their comparison with factor-graph approaches is therefore meaningful in terms of the downstream capabilities enabled by the representation, rather than through a common estimation or uncertainty model.
+Open-vocabulary frameworks further extend this to previously unseen categories using CLIP-based embeddings. 
+
+\noindent\textbf{Probabilistic-Expectation Queries:} %To address partial observability, systems like Belief Scene Graphs \cite{saucedo_estimating_2025} introduce \textit{blind nodes} representing expected but unobserved objects.
+% These modules use Graph Convolutional Networks to predict likely object or agents locations on learned co-occurrence patterns and common sense, such as expecting a stove to be in a kitchen, or classrooms having similar and repeating desks patterns. 
+systems like Belief Scene Graphs \cite{saucedo_estimating_2025} repurpose blind nodes (Section \ref{sec:dyn_world_model_representations_scene_graphs}) to answer ``what is likely present, even if unobserved'', using the same GCN-based co-occurrence priors to predict object or, potentially, agent locations.
+
+While these three paradigms differ in representation and reasoning mechanism, Table~\ref{tab:query_paradigms} reveals a shared limitation: each is fundamentally a query over a \textit{static} world snapshot. 
+Geometric-metric queries assume the underlying mesh remains valid until the next re-planning trigger; symbolic-semantic queries assume the scene graph reflects the current arrangement of entities, requiring re-detection or change-point tracking to remain accurate; and probabilistic-expectation queries model uncertainty over \textit{unobserved} space rather than uncertainty over \textit{time}, leaving moving or transient objects largely unaddressed. 
+Bridging this gap, recent work on dynamic scene graphs and continual re-localization (e.g.,~\cite{ejaz2025situationallyawarepathplanningexploiting}) begins to treat the world model itself as a temporally evolving belief, suggesting that future query paradigms may need to fuse the spatial reasoning surveyed above with explicit temporal consistency mechanisms.
+
+\begin{table*}[t]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{0.0}
+\caption{Comparison of the three query paradigms over hybrid world models.}
+\label{tab:query_paradigms}
+\begin{tabularx}{\textwidth}{@{}l X X X@{}}
+\toprule
+\textbf{Dimension} & \textbf{Geometric-Metric} & \textbf{Symbolic-Semantic} & \textbf{Probabilistic-Expectation} \\
+\midrule
+Representation &
+Metric-semantic mesh, factor-graph pose layers, occupancy/TSDF volumes &
+Hierarchical 3D scene graph (room/object/relation nodes) &
+Scene graph augmented with latent \textit{blind nodes} and learned priors \\
+\addlinespace
+Core question &
+Is this space free? What is the shortest path from A to B? &
+Where is object X? What satisfies relation $R$ to $Y$? &
+What is \textit{likely} present, even if unobserved? \\
+\addlinespace
+Typical methods &
+BVH collision checks~\cite{rosinol_kimera_2021}, $A^*$, Dijkstra, RRT*, ESDF planners &
+Graph traversal/matching, LLM-grounded language-to-node resolution~\cite{gorlo_long-term_2024}, CLIP-based open-vocabulary retrieval &
+GCNs, learned co-occurrence priors, Bayesian belief updates~\cite{saucedo_estimating_2025} \\
+\addlinespace
+% Example queries &
+% ``Find a collision-free corridor wide enough for the robot base'' &
+% ``Bring the red mug from inside the cabinet under the sink''&
+% ``Estimate where the fire extinguisher is in this unexplored office''\\
+% \addlinespace
+Granularity &
+Fine-grained, continuous/metric &
+Discrete, categorical, relational &
+Discrete, but probability-weighted over unobserved nodes \\
+\addlinespace
+Failure modes &
+Degrades under sensor noise/incomplete reconstruction; costly at scale without hierarchical pruning &
+Sensitive to grounding errors; brittle to novel categories without open-vocab support &
+Priors can encode dataset bias; blind-node confidence is hard to calibrate \\
+\addlinespace
+Role of dynamics &
+Assumes quasi-static mesh; requires re-planning triggers on change &
+Assumes static graph; needs incremental updates from re-detection &
+Models unobserved-space uncertainty, not temporal/moving-object uncertainty \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+\subsection{Action Coupling and Hierarchical Planning}\label{sec:querying_reasoning_action_action}
+Interaction with the environment is increasingly handled through abstractions that trade off model fidelity for computational efficiency \cite{ejaz2025situationallyawarepathplanningexploiting}.
+
+\noindent\textbf{Hierarchical and Multi-Resolution Planning}: 3D Scene Graphs enable robots to decompose complex tasks across abstraction layers.
+For instance, path planning can occur first at building or room level before refining to traversable place nodes, accelerating query times by several orders of magnitude compared to dense volumetric approaches \cite{viswanathan2024xflieleveragingactionablehierarchical} \cite{viswanathan2025spadescalablepathplanning} \cite{ejaz2025situationallyawarepathplanningexploiting} \cite{ray2024taskmotionplanninghierarchical}, and allowing for easier storage of pre-computed path when replanning is necessary \cite{ejaz2025situationallyawarepathplanningexploiting}.
+
+\noindent\textbf{Task-Conditioned Subgraphs:} To manage the scale of massive environmental graphs, frameworks like \textit{SayPlan}\cite{rana2023sayplangroundinglargelanguage} and \textit{Clio}\cite{maggio_clio_2024} use ``task-driven'' abstraction. 
+These systems interactively shrink the 3D Scene Graph by clustering and pruning nodes irrelevant to the current natural language mission, creating a minimal, actionable subgraph ready to use for the planner.
+
+\noindent\textbf{Control-Centric Hierarchy:} Some architectures incorporate an \textit{Action Layer} directly into the scene graph \cite{ravichandran_hierarchical_2021}. 
+This layer represents candidate robot actions, such as \textit{forward}, \textit{turn}, as graph nodes connected to semantic elements, grounding affordances, and next-step reasoning within the spatial model.
+
+\subsection{Dynamic Updates and Closed-Loop Consistency}\label{sec:querying_reasoning_action_updates}
+In non-stationary environments, maintaining the accuracy of the world model requires the continuous correction of nodes and edges as the scene evolves. 
+
+\noindent\textbf{Re-Perception and Credibility Loops:} Systems like SG-Nav \cite{yin2024sgnav} implement a re-perception mechanism that evaluates the credibility of goal candidates. 
+If a classification is found to be ambiguous or incorrect during closer inspection, the agent dynamically adjusts the graph structure in real time.
+
+\noindent\textbf{Interaction-Aware Updates:} DovSG \cite{yan_dynamic_2025} and Lost\&Found\cite{behrens_lost_2025} detect hand-object contact events to update object poses and parent-child relations locally, without requiring a full-dense scene reconstruction. 
+
+\noindent\textbf{Geometric Verification:} %To correct the graph over time, frameworks like Khronos \cite{schmid_khronos_2024} distinguish between \textit{absence of evidence}, i.e. occlusion, and \textit{evidence of absence}, i.e. actual removal. 
+% By checking if sensor rays go through previously occupied volumes, the system can back-propagate removal events to prune old inactive nodes and maintain temporal consistency. 
+Khronos \cite{schmid_khronos_2024} applies the removal-vs-occlusion check at the interaction layer, back-propagating confirmed removals to prune stale nodes and maintain temporal consistency.
+
+\subsection{Functional Interaction and Action-Effect Reasoning}\label{sec:querying_reasoning_action_interaction}
+Beyond spatial relations, recent world models explicitly encode \textit{functional} structure that captures how robot actions induce state changes in the environment.
+Functional Scene Graphs model interactive elements such as handles, switches, and control surfaces as first-class nodes, and represent causal dependencies through directed functional relations (e.g. \textit{controls}, \textit{opens}, \textit{enables}) \cite{zhang_open-vocabulary_2025} \cite{rotondi_fungraph_2025}. 
+This representation allows robots to reason about which actions are required to achieve a desired state change, effectively grounding manipulation and task planning directly in the world model.
+
+Crucially, functional relations are activated through interaction: they are updated when actions are executed or when human–object interactions are observed. 
+This enables localized, semantically meaningful graph updates without requiring global re-optimization or dense scene reconstruction, as demonstrated in interaction-aware systems such as DovSG \cite{yan_dynamic_2025} and Lost \& Found \cite{behrens_lost_2025}. 
+By encoding action–effect couplings explicitly, functional scene graphs bridge symbolic task reasoning and geometric execution, providing a structured model for multi-step manipulation and interaction in dynamic environments.
+
+
+
+% Emerging interaction paradigms extend beyond static relations to capture the operational and rhythmic logic of the world.
+
+% \noindent\textbf{Functional Scene Graphs:} Frameworks like OpenFunGraph \cite{zhang_open-vocabulary_2025} explicitly model interactive elements, for instance handles, switches and knobs, and their directed functional edges, e.g. a switch \textit{controls} a light. 
+% This enables robots to execute complex, multi-step tasks by reasoning about which elements trigger specific environmental functions.
+
+% \noindent\textbf{4D Temporal Reasoning:} Systems like \textit{Aion} \cite{catalano_aion_2025} attach directional flow statistics (Maps of Dynamics) to navigational nodes. 
+% By learning the rhythm, or seasonality, of human activity, the robot can proactively plan paths that avoid high-congestion areas or align with dominant traffic flows. 
+% This is supported by "temporal ownership transfer", ensuring dynamics move with their associated nodes during pose graph loop closure. 
+
