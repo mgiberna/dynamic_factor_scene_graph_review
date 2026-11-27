@@ -70,6 +70,9 @@ We distinguish three tiers:
 \end{itemize}
 These tiers classify motion and state-change processes, rather than physical entities themselves.
 Temporal Horizon is defined relative to the robot's observation process and world-model update cycle, rather than by a universal elapsed-time threshold.
+\hl{Although these regimes are typically associated with different orders of magnitude in elapsed time, such temporal ranges are only indicative and do not define classification boundaries.
+The classification depends on the frequency and continuity of observations, the operational context of the robot, and the persistence and structural nature of the environment change. 
+For instance, the same object displacement may be perceived as continuous motion by a robot directly observing it, or a semi-static change by a robot revisiting the scene after the displacement occurred. }
 A change process is classified as \textbf{short-term} when its state evolves during continuous observation and must therefore be estimated or tracked online; as \textbf{semi-static} when the entity is approximately stationary within an observation but its state differs between observations or revisits; and as \textbf{long-term structural} when the change constitutes a persistent modification of the environment's structural configuration across sessions or deployments. 
 Consequently, different dynamic processes associated with the same physical entity may belong to different tiers, and may coexist within the same world model. 
 For example, the articulated trajectory of a door while it is opening is a short-term dynamic process, the resulting open/closed state retained between observations is a semi-static state change, and installation, removal, or persistent reconfiguration of the door or doorway constitutes long-term structural evolution.

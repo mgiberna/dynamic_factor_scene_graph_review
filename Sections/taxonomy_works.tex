@@ -8,11 +8,14 @@ Rather than ranking methods by performance, the comparison aims to map the desig
 The analysis organizes existing approaches along several dimensions that recur throughout the surveyed literature:
 \begin{itemize}
     \item \textbf{Graph Stack}: the primary representational backbone employed by the system, distinguishing between factor graphs (FG), scene graph (SG), and hybrid architectures that explicitly maintain both representations with cross-representation correspondence, as defined in Section \ref{sec:background_hybrid};
-    \item \textbf{Dynamics Type}: the class of environmental change modeled, using the same three-tier Temporal Horizon distinction introduced in Section \ref{sec:taxonomy_dynamics} (short-term dynamics, semi-static changes, and long-term structural evolution);
+    \item \textbf{Dynamics Type}: the class of environmental change modeled, using the same three-tier Temporal Horizon distinction introduced in Section \ref{sec:taxonomy_dynamics} \textcolor{red}{(short-term dynamics, semi-static changes, and long-term structural evolution)} \hl{Short-term dynamics require an explicit representation of motion during observation, either at the individual entity or aggregated motion level. Semi-static changes require the mechanisms to detect, represent or update entity states that differ between observations or revisits. Long-term structural changes require the mechanism to detect or represent persistent modifications of the environment's structural configuration across sessions. Robustness to dynamic entities through outlier rejection alone, multi-session operation, or the representation of potentially movable entities without temporal state updates do not constitute sufficient evidence of dynamic coverage.}
+    
+    \hl{For each category, $\checkmark$ indicates that the corresponding mechanism is experimentally demonstrated in the original work; $\sim$ indicates explicit architectural or component-level support without a corresponding system-level experimental demonstration; and $\times$ indicates that no explicit support is reported. These indicators characterize the reported evidence of dynamics coverage, independently of the probabilistic treatment of architectural coupling of the corresponding mechanisms};
+    %the class of environmental change modeled, using the same three-tier Temporal Horizon distinction introduced in Section \ref{sec:taxonomy_dynamics} (short-term dynamics, semi-static changes, and long-term structural evolution);
     \item \textbf{Represented Scene}: the operational context, such as indoor, outdoor, or any environment;
     \item \textbf{Data Association Strategy}: the mechanism used to link observations over time, ranging from deterministic matching to probabilistic multi-hypothesis methods or learned similarity models;
     \item \textbf{Inference Policy}: the underlying inference method, including batch maximum a posteriori (MAP) optimization, incremental smoothing, filtering-based approaches, or variational inference;
-    \item \textbf{Uncertainty Profile}:  which uncertainty classes are represented (\textit{geometric state, \textit{semantics}, \textit{data association}, \textit{existence}, and \textit{relations}), and whether their treatment is explicitly probabilistic, heuristic or deterministic};
+    \item \textbf{Uncertainty Profile}:  which uncertainty classes are represented (\textit{geometric state}, \textit{semantics}, \textit{data association}, \textit{existence}, and \textit{relations}), and whether their treatment is explicitly probabilistic, heuristic or deterministic). \hl{The profile characterizes the treatment of individual uncertainty classes and does not necessarily indicate whether uncertainty is propagated across representation layers};
     \item \textbf{Sensor}: the employed sensing inputs used to build the world model;
     \item \textbf{System Properties}: 
     \begin{itemize}
@@ -35,6 +38,9 @@ For example, learned semantic confidence scores, language-model outputs, and cov
 Accordingly, the reported system-property indicators summarize the level of evidence provided by the original works under their evaluated configurations, rather than intrinsic system capabilities, and differences in reported downstream performance cannot generally be attributed to the representation choice alone.
 Moreover, the surveyed literature does not provide a standardized metric or controlled benchmark that isolates the effect of the representation architecture itself.
 Existing metrics quantify individual aspects, such as geometric accuracy or downstream task success, but do not define a common measure of superiority across FG, SG, and hybrid FG-SG architectures.
+\hl{The dynamics classifications in Table} \ref{tab:taxonomy_overview}\hl{ follow the operational definitions introduced in Section} \ref{sec:taxonomy_dynamics} \hl{ rather than the terminology adopted by individual works. For example, Khronos} \cite{schmid_khronos_2024} \hl{demonstrates both the tracking of moving entities and the detection of changes in object presence and location between observations. 
+Although the latter are referred to as long-term changes in the original work, they correspond to semi-static changes in the original work, since the background structure is assumed to remain temporally invariant. On the other hand, system explicitly addressing persistent changes to the built environment, such as LT-mapper } \cite{kim_lt-mapper_2022} \hl{, addresses the long-term structural category.
+These classifications describe the types of environmental change addressed by each system,  rather than the degree to which their corresponding estimation and maintenance mechanisms are integrated within a common probabilistic framework.}
 
 \begin{table*}[htbp]
 \caption{Comparative analysis of representative
@@ -50,7 +56,7 @@ environments.}
   \setlength{\extrarowheight}{-2pt}
   \setlength{\aboverulesep}{0.2ex}
 
-    \begin{tabularx}{\textwidth}{@{}
+    \begin{tabularx}{1.10\textwidth}{@{}
       >{\raggedright\arraybackslash}l  % Work
       >{\centering\arraybackslash}p{1.0cm}   % Graph stack 
       >{\raggedright\arraybackslash}X        % Nodes
@@ -149,6 +155,20 @@ environments.}
     \makecell[l]{Autonomous\\ indoor\\service robots} \\
     \midrule
 
+    \colorbox{yellow}{\makecell[l]{LT-mapper\\Kim and Kim\\(2022)\cite{kim_lt-mapper_2022}}} &
+    \colorbox{yellow}{\makecell[c]{FG}} &
+    \colorbox{yellow}{\makecell[l]{Keyframe \\ poses, session \\ anchors}} &
+    \colorbox{yellow}{\makecell[l]{Odometry,\\intra/inter\\-session loop\\ factors}} &
+    \colorbox{yellow}{\makecell[l]{short-term \xmark\\semi-static \cmark\\long-term \cmark}} &
+    \colorbox{yellow}{Outdoor} &
+    \colorbox{yellow}{\makecell[l]{Scan Context,\\ICP, radius \\ search}} &
+    \colorbox{yellow}{\makecell[l]{Multi-session\\PGO (iSAM2),\\map updates}} &
+    \colorbox{yellow}{\makecell[l]{G:P, S:--,\\ A:D, E:--,\\ R:--}} &
+    \colorbox{yellow}{\makecell[l]{LiDAR}} &
+    \colorbox{yellow}{\xmark} & \colorbox{yellow}{\xmark} & \colorbox{yellow}{\xmark} &
+    \colorbox{yellow}{\makecell[l]{Lifelong\\ mapping + \\struct. change\\ detection}} \\
+    \midrule
+    
     % \makecell[l]{Zaech et al.\\(2022)\cite{zaech_learnable_2022}} &
     % \makecell[c]{FG} &
     % \makecell[l]{Object\\ observations,\\object tracks} &
@@ -345,7 +365,7 @@ environments.}
   \begin{tabularx}{\textwidth}{@{}l >{\raggedright\arraybackslash}X@{}}
     \textbf{Legend:} &
     \textbf{Graph stack}: FG (factor graph), SG (scene graph), Hybrid (FG-backed SG / SG-constrained FG).
-    \textbf{Dynamics type}: (i) short-term, (ii) semi-static,    (iii)  long-term structural change.
+    \textbf{Dynamics type}: (i) short-term, (ii) semi-static,    (iii)  long-term structural change \hl{, as defined in Section} \ref{sec:taxonomy_dynamics}\hl{. $\checkmark$ = experimentally demonstrated; $\sim$ = architectural or component-level support without system-level demonstration; $\times$ = no explicit support reported. }
     \textbf{Represented Scene}: Indoor, Outdoor, Any.
     \textbf{Association}: data association (deterministic, MHT, JPDA, learned matching).
     \textbf{Inference}: batch MAP, incremental smoothing, filtering, variational, particle/mixture.
@@ -380,12 +400,15 @@ The trade-off is that this template primarily addresses continuously moving agen
 \paragraph{Layered Stack with FG Backbone ( loosely coupled hybrid FG-SG)}
 Kimera \cite{rosinol_kimera_2021} and Hydra \cite{hughes_hydra_2022} exemplify a layered architecture in which a factor graph optimizer provides a globally consistent geometric foundation, while a separate scene graph parser constructs the semantic-relational superstructure. 
 The advantage is modularity: the scene graph logic can be developed independently of the SLAM back-end. 
-The disadvantage is one-directional information flow: the scene graph is informed by the factor graph, but semantic information rarely propagates back to improve localization, so geometric uncertainty never reaches the semantic layer.
+\textcolor{red}{The disadvantage is one-directional information flow: the scene graph is informed by the factor graph, but semantic information rarely propagates back to improve localization, so geometric uncertainty never reaches the semantic layer.}
+\hl{A limitation of the feed-forward variant of this architecture is its predominantly unidirectional information flow: the scene graph is informed by the factor graph, but semantic information does not directly constrain the underlying estimation problem. This limitation is different from forward uncertainty propagation, which is possible without semantic feedback. However, in the surveyed layered implementations, the FG-SG interface primarily transfers optimized geometric states, with limited explicit propagation of their posterior uncertainties into higher-level semantic and relational representations.}
 
 
 \paragraph{Unified Optimizable Graph ( tightly-coupled hybrid FG-SG)}
 S-Graphs \cite{bavle_s-graphs_2025} and DynEMo-SLAM \cite{giberna_dynemo-slam_2025} incorporate semantic entities directly as variables and factors within the same factor graph that optimizes robot poses. 
 This enables bidirectional information flow: semantic structural priors constrain ego-trajectory estimation, while geometric observations refine semantic entity states. 
+\hl{Such joint estimation provides a mathematical basis for recovering posterior uncertainty and statistical dependencies among the included state variables. 
+However, bidirectional coupling does not necessarily imply that these uncertainties are explicitly recovered or propagated to semantic attributes and relational predicates outside the optimization state.}
 DynEMo-SLAM extends this template to dynamic entities by constraining entity pose variables with semantic motion priors and structural relations. 
 The pattern is particularly expressive in environments where structural semantics are stable and informative, while its applicability to large-scale, dynamic outdoor settings, where the number and identity of semantic entities grow rapidly, has not yet been demonstrated.
 %represent a tighter integration in which semantic entities are incorporated directly as variables and factors within the same factor graph that optimizes robot poses.

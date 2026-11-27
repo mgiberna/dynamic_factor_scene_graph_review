@@ -197,16 +197,31 @@ These failure modes therefore cannot be diagnosed or mitigated through geometric
 Geometric-state uncertainty is the most mature of these classes within factor-graph formulations. Measurement factors, including sensor observations and odometry constraints, encode measurement uncertainty through noise models, covariance matrices, or information matrices.
 Motion-prior factors similarly encode uncertainty associated with the assumed evolution model.
 These uncertainties are fused through probabilistic inference, and posterior marginal state covariances can be obtained from the resulting joint information matrix, commonly using a local Gaussian approximation around the MAP estimate \cite{dellaert_factor_2017}.
-The difficulty arises at the boundary: how does the uncertainty of the pose nodes in a factor graph propagate into the semantic and relational claims made by a scene graph node?
+\textcolor{red}{The difficulty arises at the boundary: how does the uncertainty of the pose nodes in a factor graph propagate into the semantic and relational claims made by a scene graph node?
 In the layered-stack architecture, this propagation is largely absent, as shown in Figure \ref{fig:FG_SG_uncertainty_boundary}.
 Scene graph nodes that are instantiated from a poorly constrained region of the pose graph  carry the same confidence as one from a well constrained area. 
 In dynamic settings, where uncertainty is generally higher and crucial for spatio-temporal estimation and prediction, this is a large drawback.
-Systems that adopt the unified optimizable graph architecture handle this more naturally: by representing semantic entities as factor graph variables, their states participate in the joint information structure, allowing their posterior uncertainty to reflect the geometric and semantic constraints included in the optimization \cite{bavle_s-graphs_2025}.
+Systems that adopt the unified optimizable graph architecture handle this more naturally: by representing semantic entities as factor graph variables, their states participate in the joint information structure, allowing their posterior uncertainty to reflect the geometric and semantic constraints included in the optimization \cite{bavle_s-graphs_2025}.}
+\hl{At the FG-SG interface, it is important to distinguish uncertainty representation from uncertainty propagation. 
+The former concerns which uncertainty quantities are explicitly modeled, whereas the latter concerns how their uncertainty affects estimates or beliefs in another representation.
+In a layered architecture, geometric-state uncertainty can be propagated forward by transferring state distribution, marginal covariances, or appropriate approximations alongside the optimized geometric states. This does not require semantic feedback to the factor graph.
+
+However, when only point estimates or deterministic labels are transferred, information about uncertainty and correlations may be lost at the interface. Even when marginal covariances are retained, dependencies between entities may be discarded, limiting the subsequent assessment of relational uncertainty. 
+
+In unified optimizable graph architectures, the geometric states of semantic entities participate directly in the joint estimation problem, as in S-Graphs} \cite{bavle_s-graphs_2025}. \hl{This allows their posterior uncertainty to reflect the dependencies encoded by the included factors.
+Nevertheless, joint MAP estimation does not imply that posterior covariances are explicitly recovered, nor that uncertainty over semantic labels, entity existence, or scene-graph relations is represented probabilistically.}
+\hl{For example, consider the relative position between two scene-graph entities, $\mathbf{d_{ij}} = \mathbf{p_i} - \mathbf{p_j}$. Its covariance is given by:}
+\begin{equation}
+    \Sigma_{d_{ij}} = \Sigma_{ii} + \Sigma_{jj} - \Sigma_{ij} - \Sigma_{ji}
+\end{equation}
+\hl{where $\Sigma_{ii}$ and $\Sigma_{jj}$ denote the marginal position covariances, and $\Sigma_{ij}$ and $\Sigma_{ji}$ their cross-covariances. Transferring only individual state estimates or marginal covariances may therefore be insufficient to correctly characterize the uncertainty of a spatial relation. This illustrates that the preservation of statistical dependencies across representation layers is distinct from the direction of information flow.}
+\hl{Existing systems demonstrate different aspects of uncertainty handling rather than a complete cross-representation propagation mechanism. For instance, Kimera} \cite{rosinol_kimera_2021} \hl{ and Hydra }\cite{hughes_hydra_2022} \hl{perform Bayesian fusion of semantic observation at the voxel level, but this is distinct from propagating geometric posterior uncertainty into scene-graph relations. Similarly, the joint estimation of geometric states associated with semantic entities in S-Graphs does not by itself provide probabilistic beliefs over all semantic and relational attributes.}
 Recent work by Millan-Romera et al. \cite{millanromera2026generationuncertaintyawarehighlevelspatial} demonstrates that incorporating learned uncertainty estimates for semantic factors, rather than fixed information matrices, further improves SLAM accuracy, particularly in edge cases where semantic concepts are the only cues preserving geometric consistency.
 
 A poorly-constrained dynamic entity node produces an unreliable trajectory estimate that, if allowed to influence loop-closure candidates, can corrupt the static map, too\cite{giberna_dynemo-slam_2025}.
 %Khronos \cite{schmid_khronos_2024} addresses this through explicit 4D metric uncertainty on object fragments, distinguishing reliable observations from transient ones before any graph level update is triggered. 
-Khronos \cite{schmid_khronos_2024} mitigates this by attaching explicit 4D metric uncertainty to its object fragments before they are committed to the global graph, rather than treating every instantiated node as equally confident. 
+Khronos \cite{schmid_khronos_2024} mitigates this by \textcolor{red}{attaching explicit 4D metric uncertainty to its object fragments before they are committed to the global graph, rather than treating every instantiated node as equally confident.} \hl{aggregating locally consistent observations into object fragments, jointly optimizing fragment positions and robot poses using robust geometric constraints, and performing geometric verification before reconciling fragments into persistent objects. 
+These mechanisms improve the robustness of the resulting representation, but do not constitute explicit propagation of posterior geometric uncertainty into higher-level semantic relations.} 
 The broader challenge, i.e., consistent propagation of geometric and temporal uncertainty into semantic relations, (e.g., how certain is the \textit{on} edge between an object and a table, given the covariance on both their pose nodes?) remains largely open and represents one of the key research gaps identified in Section \ref{sec:challenges_future_works}.
 
 A related failure mode in dynamic environments is the corruption of higher-level scene graph abstractions by incorrect dynamic entity handling. 
@@ -252,12 +267,12 @@ This unified representation enables actionable spatial perception, where the wor
 \subsection{Representing Dynamics in Graph-Based World Models}\label{sec:dynamics_representations}
 The evolution of world model representations for robotics in non-stationary scenarios has progressed from treating environmental change as outlier noise toward a systematic, relational and probabilistic characterization of dynamics across multiple temporal scales \cite{rosinol_3d_2020} \cite{schmid_khronos_2024}.
 This section presents the most common characterization of dynamic entities in dynamic world modeling. Specifically, we emphasize the integration of factor graphs and 3DSGs to handle short-term dynamics (Section \ref{sec:dynamics_representations_agents}), semi-static changes (Section \ref{sec:dynamics_representations_objects}), and long-term structural evolution (Section \ref{sec:dynamics_representations_longterm}). 
-Figure \ref{fig:dynamics_timescale} depicts the dynamic distinction we adopt, based on the type and temporal scale of expected motion, highlighting some relevant works focusing on each of them.
+Figure \ref{fig:dynamics_timescale} depicts the dynamic distinction we adopt \textcolor{red}{, based on the type and temporal scale of expected motion}, highlighting \hl{typical but non-defining temporal ranges and} some relevant works focusing on each of them.
 
 \begin{figure}[!ht]
     \centering
-    \includegraphics[width=0.9\columnwidth]{Figures/figure_dynamics_timescale.png}
-    \caption{Diagram showing the adopted  temporal-horizon taxonomy. The tiers denote operational change regimes rather than mutually exclusive entity classes, the same entity or system may span multiple tiers. Relevant works are reported for each, or group of, type of dynamics.}
+    \includegraphics[width=0.9\columnwidth]{Figures/figure_dynamics_timescale_updated.png}
+    \caption{Diagram showing the adopted  temporal-horizon taxonomy. \hl{The reported temporal ranges are indicative of typical timescales and do not constitute fixed classification boundaries.} The tiers denote operational change regimes \hl{relative to the robot's observation and wold model update horizons,} rather than mutually exclusive entity classes\textcolor{red}{, t} \hl{. T}he same entity or system may span multiple tiers. Relevant works are reported for each, or group of, type of dynamics.}
     \label{fig:dynamics_timescale}
 \end{figure}
 
